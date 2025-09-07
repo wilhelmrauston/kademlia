@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/eislab-cps/go-template/internal/cli"
-	"github.com/eislab-cps/go-template/pkg/build"
+	"github.com/wilhelmrauston/kademlia/internal/cli"
+	"github.com/wilhelmrauston/kademlia/pkg/build"
 )
 
 var (
