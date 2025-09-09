@@ -4,8 +4,7 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/wilhemrauston/kademlia/kademlia"
+	"kademlia"
 )
 
 func main() {
