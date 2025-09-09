@@ -1,6 +1,9 @@
-FROM alpine
+FROM golang:1.25-alpine
 
-WORKDIR /
-COPY ./bin/helloworld /bin
+RUN apk update && apk add curl
+WORKDIR /app
 
-CMD ["helloworld", "talk"]
+
+COPY go.mod ./
+#COPY go.sum ./
+RUN go mod download
