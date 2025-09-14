@@ -1,9 +1,14 @@
-FROM golang:1.25-alpine
+FROM golang
 
-RUN apk update && apk add curl
 WORKDIR /app
+RUN cd /app
 
+RUN apt-get update 
+RUN git clone https://github.com/wilhelmrauston/kademlia.git
+RUN cd kademlia && git pull
 
-COPY go.mod ./
-#COPY go.sum ./
-RUN go mod download
+RUN cd kademlia && go build -o main .
+
+EXPOSE 8001
+
+ENTRYPOINT [ "kademlia/main" ]
