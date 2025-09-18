@@ -1,0 +1,95 @@
+version: '3'
+services:
+  node1:
+    build: .
+    command: ["./kademlia-node", "-port=8001"]
+    ports:
+      - "8001:8001"
+  
+  node2:
+    build: .
+    command: ["./kademlia-node", "-port=8002", "-target=node1:8001"]
+    ports:
+      - "8002:8002"
+    depends_on:
+      - node1
+  
+  node3:
+    build: .
+    command: ["./kademlia-node", "-port=8003", "-target=node1:8001"]
+    ports:
+      - "8003:8003"
+    depends_on:
+      - node1
+
+  node4:
+    build: .
+    command: ["./kademlia-node", "-port=8004", "-target=node1:8001"]
+    ports:
+      - "8004:8004"
+    depends_on:
+      - node1
+
+  node5:
+    build: .
+    command: ["./kademlia-node", "-port=8005", "-target=node1:8001"]
+    ports:
+      - "8005:8005"
+    depends_on:
+      - node1
+
+  node6:
+    build: .
+    command: ["./kademlia-node", "-port=8006", "-target=node1:8001"]
+    ports:
+      - "8006:8006"
+    depends_on:
+      - node1
+
+  node7:
+    build: .
+    command: ["./kademlia-node", "-port=8007", "-target=node1:8001"]
+    ports:
+      - "8007:8007"
+    depends_on:
+      - node1
+
+  node8:
+    build: .
+    command: ["./kademlia-node", "-port=8008", "-target=node1:8001"]
+    ports:
+      - "8008:8008"
+    depends_on:
+      - node1
+
+  node9:
+    build: .
+    command: ["./kademlia-node", "-port=8009", "-target=node1:8001"]
+    ports:
+      - "8009:8009"
+    depends_on:
+      - node1
+
+  node10:
+    build: .
+    command: ["./kademlia-node", "-port=8010", "-target=node1:8001"]
+    ports:
+      - "8010:8010"
+    depends_on:
+      - node1
+
+  node11:
+    build: .
+    command: ["./kademlia-node", "-port=8011", "-target=node1:8001"]
+    ports:
+      - "8011:8011"
+    depends_on:
+      - node1
+
+  node12:
+    build: .
+    command: ["./kademlia-node", "-port=8012", "-target=node1:8001"]
+    ports:
+      - "8012:8012"
+    depends_on:
+      - node1
