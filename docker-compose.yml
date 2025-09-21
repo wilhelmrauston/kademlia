@@ -1,21 +1,32 @@
-version: '3'
+version: '3.8'
+
+networks:
+  kademlia-net:
+    driver: bridge
+
 services:
   node1:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8001"]
     ports:
       - "8001:8001"
-  
+
   node2:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8002", "-target=node1:8001"]
     ports:
       - "8002:8002"
     depends_on:
       - node1
-  
+
   node3:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8003", "-target=node1:8001"]
     ports:
       - "8003:8003"
@@ -24,6 +35,8 @@ services:
 
   node4:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8004", "-target=node1:8001"]
     ports:
       - "8004:8004"
@@ -32,6 +45,8 @@ services:
 
   node5:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8005", "-target=node1:8001"]
     ports:
       - "8005:8005"
@@ -40,6 +55,8 @@ services:
 
   node6:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8006", "-target=node1:8001"]
     ports:
       - "8006:8006"
@@ -48,6 +65,8 @@ services:
 
   node7:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8007", "-target=node1:8001"]
     ports:
       - "8007:8007"
@@ -56,6 +75,8 @@ services:
 
   node8:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8008", "-target=node1:8001"]
     ports:
       - "8008:8008"
@@ -64,6 +85,8 @@ services:
 
   node9:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8009", "-target=node1:8001"]
     ports:
       - "8009:8009"
@@ -72,6 +95,8 @@ services:
 
   node10:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8010", "-target=node1:8001"]
     ports:
       - "8010:8010"
@@ -80,6 +105,8 @@ services:
 
   node11:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8011", "-target=node1:8001"]
     ports:
       - "8011:8011"
@@ -88,6 +115,8 @@ services:
 
   node12:
     build: .
+    networks:
+      - kademlia-net
     command: ["./kademlia-node", "-port=8012", "-target=node1:8001"]
     ports:
       - "8012:8012"

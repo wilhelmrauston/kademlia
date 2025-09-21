@@ -8,8 +8,9 @@ func TestKademliaMessageHandlerPing(t *testing.T) {
 	nodeAddress := "127.0.0.1:8000"
 	me := NewContact(nodeID, nodeAddress)
 	rt := NewRoutingTable(me)
+	ds := NewDataStore()
 	
-	handler := NewKademliaMessageHandler(rt, nodeID, nodeAddress, config)
+	handler := NewKademliaMessageHandler(rt, nodeID, nodeAddress, config, ds)
 	
 	// Create a ping message
 	senderID := NewRandomKademliaID()
@@ -58,6 +59,7 @@ func TestKademliaMessageHandlerFindNode(t *testing.T) {
 	nodeAddress := "127.0.0.1:8000"
 	me := NewContact(nodeID, nodeAddress)
 	rt := NewRoutingTable(me)
+	ds := NewDataStore()
 	
 	// Add some contacts to routing table
 	for i := 0; i < 5; i++ {
@@ -66,7 +68,7 @@ func TestKademliaMessageHandlerFindNode(t *testing.T) {
 		rt.AddContact(contact)
 	}
 	
-	handler := NewKademliaMessageHandler(rt, nodeID, nodeAddress, config)
+	handler := NewKademliaMessageHandler(rt, nodeID, nodeAddress, config, ds)
 	
 	// Create a find node message
 	senderID := NewRandomKademliaID()

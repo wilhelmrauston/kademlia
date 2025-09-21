@@ -8,7 +8,9 @@ const (
     FIND_NODE
     FIND_NODE_RESPONSE
     FIND_VALUE
+    FIND_VALUE_RESPONSE
     STORE
+    STORE_RESPONSE
     JOIN_REQUEST
     JOIN_RESPONSE
 )
@@ -25,8 +27,12 @@ func (mt MessageType) String() string {
 		return "FIND_NODE_RESPONSE"
 	case FIND_VALUE:
 		return "FIND_VALUE"
+	case FIND_VALUE_RESPONSE:
+		return "FIND_VALUE_RESPONSE"
 	case STORE:
 		return "STORE"
+	case STORE_RESPONSE:
+		return "STORE_RESPONSE"
 	case JOIN_REQUEST:
 		return "JOIN_REQUEST"
 	case JOIN_RESPONSE:
@@ -74,6 +80,10 @@ type FindValueResponse struct {
 type StoreData struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+type StoreResponse struct {
+	Status string `json:"status"`
 }
 
 type JoinRequestData struct {

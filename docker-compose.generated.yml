@@ -1,0 +1,704 @@
+version: '3.8'
+networks:
+  kademlia-net:
+    driver: bridge
+
+services:
+  node1:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8001"]
+    ports:
+      - "8001:8001"
+
+  node2:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8002", "-target=node1:8001"]
+    ports:
+      - "8002:8002"
+    depends_on:
+      - node1
+
+  node3:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8003", "-target=node1:8001"]
+    ports:
+      - "8003:8003"
+    depends_on:
+      - node1
+
+  node4:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8004", "-target=node1:8001"]
+    ports:
+      - "8004:8004"
+    depends_on:
+      - node1
+
+  node5:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8005", "-target=node1:8001"]
+    ports:
+      - "8005:8005"
+    depends_on:
+      - node1
+
+  node6:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8006", "-target=node1:8001"]
+    ports:
+      - "8006:8006"
+    depends_on:
+      - node1
+
+  node7:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8007", "-target=node1:8001"]
+    ports:
+      - "8007:8007"
+    depends_on:
+      - node1
+
+  node8:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8008", "-target=node1:8001"]
+    ports:
+      - "8008:8008"
+    depends_on:
+      - node1
+
+  node9:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8009", "-target=node1:8001"]
+    ports:
+      - "8009:8009"
+    depends_on:
+      - node1
+
+  node10:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8010", "-target=node1:8001"]
+    ports:
+      - "8010:8010"
+    depends_on:
+      - node1
+
+  node11:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8011", "-target=node1:8001"]
+    ports:
+      - "8011:8011"
+    depends_on:
+      - node1
+
+  node12:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8012", "-target=node1:8001"]
+    ports:
+      - "8012:8012"
+    depends_on:
+      - node1
+
+  node13:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8013", "-target=node1:8001"]
+    ports:
+      - "8013:8013"
+    depends_on:
+      - node1
+
+  node14:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8014", "-target=node1:8001"]
+    ports:
+      - "8014:8014"
+    depends_on:
+      - node1
+
+  node15:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8015", "-target=node1:8001"]
+    ports:
+      - "8015:8015"
+    depends_on:
+      - node1
+
+  node16:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8016", "-target=node1:8001"]
+    ports:
+      - "8016:8016"
+    depends_on:
+      - node1
+
+  node17:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8017", "-target=node1:8001"]
+    ports:
+      - "8017:8017"
+    depends_on:
+      - node1
+
+  node18:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8018", "-target=node1:8001"]
+    ports:
+      - "8018:8018"
+    depends_on:
+      - node1
+
+  node19:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8019", "-target=node1:8001"]
+    ports:
+      - "8019:8019"
+    depends_on:
+      - node1
+
+  node20:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8020", "-target=node1:8001"]
+    ports:
+      - "8020:8020"
+    depends_on:
+      - node1
+
+  node21:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8021", "-target=node1:8001"]
+    ports:
+      - "8021:8021"
+    depends_on:
+      - node1
+
+  node22:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8022", "-target=node1:8001"]
+    ports:
+      - "8022:8022"
+    depends_on:
+      - node1
+
+  node23:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8023", "-target=node1:8001"]
+    ports:
+      - "8023:8023"
+    depends_on:
+      - node1
+
+  node24:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8024", "-target=node1:8001"]
+    ports:
+      - "8024:8024"
+    depends_on:
+      - node1
+
+  node25:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8025", "-target=node1:8001"]
+    ports:
+      - "8025:8025"
+    depends_on:
+      - node1
+
+  node26:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8026", "-target=node1:8001"]
+    ports:
+      - "8026:8026"
+    depends_on:
+      - node1
+
+  node27:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8027", "-target=node1:8001"]
+    ports:
+      - "8027:8027"
+    depends_on:
+      - node1
+
+  node28:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8028", "-target=node1:8001"]
+    ports:
+      - "8028:8028"
+    depends_on:
+      - node1
+
+  node29:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8029", "-target=node1:8001"]
+    ports:
+      - "8029:8029"
+    depends_on:
+      - node1
+
+  node30:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8030", "-target=node1:8001"]
+    ports:
+      - "8030:8030"
+    depends_on:
+      - node1
+
+  node31:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8031", "-target=node1:8001"]
+    ports:
+      - "8031:8031"
+    depends_on:
+      - node1
+
+  node32:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8032", "-target=node1:8001"]
+    ports:
+      - "8032:8032"
+    depends_on:
+      - node1
+
+  node33:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8033", "-target=node1:8001"]
+    ports:
+      - "8033:8033"
+    depends_on:
+      - node1
+
+  node34:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8034", "-target=node1:8001"]
+    ports:
+      - "8034:8034"
+    depends_on:
+      - node1
+
+  node35:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8035", "-target=node1:8001"]
+    ports:
+      - "8035:8035"
+    depends_on:
+      - node1
+
+  node36:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8036", "-target=node1:8001"]
+    ports:
+      - "8036:8036"
+    depends_on:
+      - node1
+
+  node37:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8037", "-target=node1:8001"]
+    ports:
+      - "8037:8037"
+    depends_on:
+      - node1
+
+  node38:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8038", "-target=node1:8001"]
+    ports:
+      - "8038:8038"
+    depends_on:
+      - node1
+
+  node39:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8039", "-target=node1:8001"]
+    ports:
+      - "8039:8039"
+    depends_on:
+      - node1
+
+  node40:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8040", "-target=node1:8001"]
+    ports:
+      - "8040:8040"
+    depends_on:
+      - node1
+
+  node41:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8041", "-target=node1:8001"]
+    ports:
+      - "8041:8041"
+    depends_on:
+      - node1
+
+  node42:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8042", "-target=node1:8001"]
+    ports:
+      - "8042:8042"
+    depends_on:
+      - node1
+
+  node43:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8043", "-target=node1:8001"]
+    ports:
+      - "8043:8043"
+    depends_on:
+      - node1
+
+  node44:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8044", "-target=node1:8001"]
+    ports:
+      - "8044:8044"
+    depends_on:
+      - node1
+
+  node45:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8045", "-target=node1:8001"]
+    ports:
+      - "8045:8045"
+    depends_on:
+      - node1
+
+  node46:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8046", "-target=node1:8001"]
+    ports:
+      - "8046:8046"
+    depends_on:
+      - node1
+
+  node47:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8047", "-target=node1:8001"]
+    ports:
+      - "8047:8047"
+    depends_on:
+      - node1
+
+  node48:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8048", "-target=node1:8001"]
+    ports:
+      - "8048:8048"
+    depends_on:
+      - node1
+
+  node49:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8049", "-target=node1:8001"]
+    ports:
+      - "8049:8049"
+    depends_on:
+      - node1
+
+  node50:
+    build: .
+    networks:
+      - kademlia-net
+    stdin_open: true
+    tty: true
+    environment:
+      - RUN_CLI=true
+    command: ["./kademlia-node", "-port=8050", "-target=node1:8001"]
+    ports:
+      - "8050:8050"
+    depends_on:
+      - node1
+

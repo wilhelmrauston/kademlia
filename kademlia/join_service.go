@@ -14,27 +14,25 @@ type JoinService struct {
 func (js *JoinService) JoinNetwork(bootstrapAddr string) error {
     fmt.Printf("Joining network via %s\n", bootstrapAddr)
     
-    // Contact bootstrap node
+    // Step 1: Contact bootstrap node
     err := js.Node.SendPing(bootstrapAddr)
     if err != nil {
         return fmt.Errorf("failed to contact bootstrap node: %v", err)
     }
     
-    fmt.Printf("Successfully contacted bootstrap node\n")
+    // Step 2: Add bootstrap to routing table (this happens automatically in ping handler)
+    time.Sleep(2 * time.Second)
     
-    time.Sleep(3 * time.Second)
+    // Step 3: Perform lookup for own node ID (paper requirement)
+    fmt.Printf("Performing self-lookup to populate routing table\n")
+    contacts := js.Node.IterativeFindNode(js.Node.ID)
     
-    fmt.Printf("Performing self-lookup to discover nearby nodes\n")
-    err = js.Node.SendFindNode(bootstrapAddr, js.Node.ID)
-    if err != nil {
-        fmt.Printf("Failed to perform self-lookup: %v\n", err)
-        // Don't fail completely, just log the error
-    } else {
-        fmt.Printf("Self-lookup request sent\n")
+    // Add discovered contacts to routing table
+    for _, contact := range contacts {
+        js.Node.GetRoutingTable().AddContact(contact)
     }
     
-    go js.startPeriodicMaintenance(bootstrapAddr)
-    
+    fmt.Printf("Self-lookup complete, discovered %d contacts\n", len(contacts))
     return nil
 }
 
