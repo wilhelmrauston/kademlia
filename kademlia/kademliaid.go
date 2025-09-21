@@ -2,6 +2,8 @@ package kademlia
 
 import (
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"math/rand"
 )
 
@@ -66,4 +68,20 @@ func (kademliaID KademliaID) CalcDistance(target *KademliaID) *KademliaID {
 // String returns a simple string representation of a KademliaID
 func (kademliaID *KademliaID) String() string {
 	return hex.EncodeToString(kademliaID[0:IDLength])
+}
+
+func (id *KademliaID) MarshalJSON() ([]byte, error) {
+    return json.Marshal(id[:])
+}
+
+func (id *KademliaID) UnmarshalJSON(data []byte) error {
+    var bytes []byte
+    if err := json.Unmarshal(data, &bytes); err != nil {
+        return err
+    }
+    if len(bytes) != IDLength {
+        return fmt.Errorf("invalid KademliaID length: got %d, want %d", len(bytes), IDLength)
+    }
+    copy(id[:], bytes)
+    return nil
 }

@@ -3,13 +3,14 @@ package kademlia
 type MessageType int
 
 const (
-	PING MessageType = iota
-	PONG
-	FIND_NODE
-	FIND_VALUE
-	STORE
-	JOIN_REQUEST
-	JOIN_RESPONSE
+    PING MessageType = iota
+    PONG
+    FIND_NODE
+    FIND_NODE_RESPONSE
+    FIND_VALUE
+    STORE
+    JOIN_REQUEST
+    JOIN_RESPONSE
 )
 
 func (mt MessageType) String() string {
@@ -20,6 +21,8 @@ func (mt MessageType) String() string {
 		return "PONG"
 	case FIND_NODE:
 		return "FIND_NODE"
+	case FIND_NODE_RESPONSE:
+		return "FIND_NODE_RESPONSE"
 	case FIND_VALUE:
 		return "FIND_VALUE"
 	case STORE:
