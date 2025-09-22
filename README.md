@@ -1,200 +1,339 @@
-# Go Project Template
+# Kademlia DHT Implementation
 
-This repository provides example code for setting up an empty Go project following best practices.
-For more information on recommended project structure, please look at this info [Golang Standards Project Layout](https://github.com/golang-standards/project-layout).
+A distributed hash table (DHT) implementation based on the Kademlia protocol, written in Go. This implementation provides peer-to-peer networking, object storage and retrieval, and supports large-scale distributed networks.
 
-# External Packages
-The template project uses the following external packages:
-- A CLI based on the [Cobra](https://github.com/spf13/cobra) framework. This framework is used by many other Golang project, e.g Kubernetes, Docker etc.
-- Logging via [Logrus](https://github.com/sirupsen/logrus)
+## Features
 
-## Project structure 
-- **`cmd/`**  
-  Contains the application's main executable logic. This is where `main.go` lives.
+- **M1: Network Formation** ✅ - Bootstrap and join Kademlia networks
+- **M2: Object Distribution** ✅ - Store and retrieve key-value pairs across the network
+- **M4: Unit Testing** ✅ - Comprehensive test suite for all components
+- **M5: Containerization** ✅ - Docker support for 50-node networks
+- **M7: Thread Safety** ✅ - Concurrent operations with proper synchronization
 
-- **`internal/`**  
-  Contains private application code. Anything inside `internal/` cannot be imported from outside the project (enforced by the Go compiler).
+## Project Structure
 
-- **`pkg/`**  
-  Contains public libraries or utilities that can be imported by other projects if needed.
+```
+kademlia/
+├── main.go                           # Application entry point
+├── go.mod                            # Main module dependencies
+├── go.sum                            # Dependency checksums
+├── kademlia-node                     # Compiled binary
+├── docker-compose.yml                # 50-node Docker network configuration
+├── Dockerfile                        # Container build configuration
+├── docker-network.sh                 # Docker network management script
+├── start-network.sh                  # Network startup script
+├── README.md                         # Project documentation
+├── .gitignore                        # Git ignore rules
+├── .github/                          # GitHub configuration
+│   └── workflows/                    # CI/CD workflows
+│       ├── docker_master.yaml        # Docker build workflow
+│       ├── go.yml                    # Go test workflow
+│       └── releaser.yaml             # Release workflow
+├── pkg/                              # Public packages
+│   └── build/
+│       └── build.go                  # Build information utilities
+└── kademlia/                         # Core Kademlia implementation
+    ├── go.mod                        # Kademlia module definition
+    ├── node.go                       # Main Node implementation with storage
+    ├── node_test.go                  # Node functionality tests
+    ├── routingtable.go               # Kademlia routing table (k-buckets)
+    ├── routingtable_test.go          # Routing table tests
+    ├── contact.go                    # Network contact management
+    ├── contact_test.go               # Contact management tests
+    ├── message.go                    # Protocol message definitions
+    ├── message_handler.go            # Message processing logic
+    ├── message_handler_test.go       # Message handler tests
+    ├── transport.go                  # UDP network transport
+    ├── kademliaid.go                 # 160-bit identifier implementation
+    ├── kademliaid_test.go            # KademliaID tests
+    ├── bucket.go                     # K-bucket implementation
+    ├── config.go                     # Network configuration
+    ├── config_test.go                # Configuration tests
+    ├── interfaces.go                 # Interface definitions
+    ├── join_service.go               # Network joining logic
+    ├── helpers.go                    # Utility functions
+    ├── helpers_test.go               # Helper function tests
+    ├── storage_test.go               # M2 storage functionality tests
+    └── benchmark_network_test.go     # Network performance benchmarks
+```
 
-- **`bin/`**  
-  Stores built binaries, generated via the `Makefile`.
+## Requirements
 
-- **`Makefile`**  
-  Automates build tasks such as compiling, building Docker images, running tests, etc.
+- **Go 1.23.5 or later**
+- **Docker** (for containerized deployment)
+- **Docker Compose** (for multi-node networks)
 
-- **`go.mod` and `go.sum`**  
-  Define module requirements and manage dependencies.
+## Quick Start
 
-##  Quick Start
-### Build the project
+### 1. Build the Project
+
 ```bash
+# Navigate to project directory
+cd kademlia
+
+# Download dependencies and build
 go mod tidy
-make build
+go build -o kademlia-node
 ```
 
-### Run the binary
+### 2. Run a Single Node
+
 ```bash
-./bin/helloworld talk
+# Start a bootstrap node
+./kademlia-node -port=8001
+
+# In another terminal, start a second node that joins the first
+./kademlia-node -port=8002 -target=127.0.0.1:8001
 ```
 
-or type:
+### 3. Available Command Line Options
+
 ```bash
-go run cmd/main.go talk
+./kademlia-node -h
 ```
+
+Options:
+- `-port=8001` - Set the UDP port for this node
+- `-target=127.0.0.1:8001` - Bootstrap node address to join
+- `-id=<hex_string>` - Use specific node ID (optional)
+
+## Testing
+
+### Run All Tests
+
+```bash
+# Navigate to kademlia package
+cd kademlia
+
+# Run complete test suite
+go test -v
+
+# Run tests with race detection
+go test -v -race
+```
+
+### Run Specific Test Categories
+
+```bash
+# Test storage functionality (M2)
+go test -v -run "TestStore|TestFindValue|TestConcurrent"
+
+# Test network functionality (M1)
+go test -v -run "TestPing|TestFindNode|TestNetwork"
+
+# Test routing table
+go test -v -run "TestRoutingTable"
+
+# Test message handling
+go test -v -run "TestMessage"
+```
+
+### Test Output Example
 
 ```console
-ERRO[0000] Error detected                                Error="This is an error"
-INFO[0000] Talking...                                    Msg="Hello, World!" OtherMsg="Logging is cool!"
-Hello, World!
+=== RUN   TestNodeStoreAndRetrieve
+DEBUG: Stored value for key a3bb6783fd4cf3a7274f5a5d623e6353e19f031e locally
+--- PASS: TestNodeStoreAndRetrieve (0.00s)
+=== RUN   TestStoreMessageHandler
+DEBUG: Processing STORE request
+DEBUG: Storing key=test_key, value=test_value
+--- PASS: TestStoreMessageHandler (0.00s)
+=== RUN   TestFindValueMessageHandler
+DEBUG: Processing FIND_VALUE request
+DEBUG: Found value locally for key find_test_key
+--- PASS: TestFindValueMessageHandler (0.00s)
+PASS
+ok      kademlia        0.009s
 ```
 
+## Docker Deployment
 
-### Build and run Docker container
-```bash
-make container
-```
-
-Or without Makefile: 
-
-```bash
-docker build -t test/helloworld .
-```
-
-```console
-Sending build context to Docker daemon  4.503MB
-Step 1/4 : FROM alpine
- ---> b0c9d60fc5e3
-Step 2/4 : WORKDIR /
- ---> Using cache
- ---> 813578363918
-Step 3/4 : COPY ./bin/helloworld /bin
- ---> 8bf1ce271011
-Step 4/4 : CMD ["helloworld", "talk"]
- ---> Running in 5dbb96d0225d
-Removing intermediate container 5dbb96d0225d
- ---> 0d4933ba1303
-Successfully built 0d4933ba1303
-Successfully tagged test/helloworld:latest
-```
+### Single Container Test
 
 ```bash
-docker run --rm test/helloworld
+# Build Docker image
+docker build -t kademlia-node .
+
+# Run single node
+docker run -p 8001:8001 kademlia-node ./kademlia-node -port=8001
 ```
 
-```console
-docker run --rm test/helloworld
-Hello, World!
-time="2025-04-29T19:15:27Z" level=error msg="Error detected" Error="This is an error"
-time="2025-04-29T19:15:27Z" level=info msg=Talking... Msg="Hello, World!" OtherMsg="Logging is cool!"
-```
+### 50-Node Network (M5 Requirement)
 
-### Running Tests
-To run all tests;
 ```bash
-make test 
+# Start the complete 50-node network
+docker compose up
+
+# Start in background
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop the network
+docker compose down
 ```
 
-Remember to update Makefile if adding more source directories with tests.
+### Docker Network Configuration
 
-To run all tests in a directory:
+The `docker-compose.yml` configures:
+- **50 nodes** (node1 through node50)
+- **Port range:** 8001-8050
+- **Bootstrap node:** node1 (all others connect to it)
+- **Automatic container dependencies**
+
+## API Usage
+
+### Core Node Operations
+
+```go
+import "kademlia"
+
+// Create a new node
+node := kademlia.NewNode("127.0.0.1:8001")
+
+// Store a value
+node.StoreValue("my-key", "my-value")
+
+// Retrieve a value
+value, found := node.GetValue("my-key")
+if found {
+    fmt.Printf("Retrieved: %s\n", value)
+}
+
+// Send store message to network
+node.SendStore("network-key", "network-value")
+
+// Find value in network
+result := node.SendFindValue("network-key")
+```
+
+### Message Types
+
+The implementation supports these Kademlia protocol messages:
+- **PING/PONG** - Liveness check
+- **FIND_NODE** - Locate nodes closest to a target ID
+- **STORE** - Store key-value pairs
+- **FIND_VALUE** - Retrieve values or find closest nodes
+
+## Development
+
+### Adding New Features
+
+1. **Implement the feature** in the appropriate `.go` file
+2. **Add tests** in corresponding `*_test.go` file
+3. **Run tests** to ensure functionality
+4. **Update this README** if needed
+
+### Code Quality
+
 ```bash
-cd pkg/helloworld
-go test -v --race
+# Format code
+go fmt ./...
+
+# Vet code for issues
+go vet ./...
+
+# Run tests with coverage
+go test -cover -v ./...
 ```
 
-Always use the `--race` flag when running tests to detect race conditions during execution.  
-The `--race` flag enables the Go race detector, helping you catch concurrency issues early during development.
+### Debugging
 
-To run individual test:
+Enable debug output by looking for `DEBUG:` prefixed log messages in test output. The implementation includes extensive debugging information for:
+- Message processing
+- Storage operations
+- Network events
+- Routing table updates
+
+## Performance
+
+### Concurrent Operations
+
+The implementation supports concurrent operations with:
+- **Thread-safe storage** using `sync.RWMutex`
+- **Concurrent network operations**
+- **Race condition protection**
+
+Test concurrent functionality:
 ```bash
-cd pkg/helloworld
-go test -v --race -test.run=TestNewHelloWorld
+go test -v -run TestConcurrentStorage
 ```
 
-```console
-=== RUN   TestNewHelloWorld
-ERRO[0000] Error detected                                Error="This is an error"
+### Network Scale
+
+- **Supports up to 50 nodes** in Docker deployment
+- **Optimized for local testing** and development
+- **UDP-based networking** for low latency
+- **JSON message serialization** for readability
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Port already in use**
+   ```bash
+   # Check for running processes
+   lsof -i :8001
+   # Kill if necessary
+   pkill -f kademlia-node
+   ```
+
+2. **Module dependency errors**
+   ```bash
+   # Clean and rebuild
+   go mod tidy
+   go clean -cache
+   go build
+   ```
+
+3. **Docker issues**
+   ```bash
+   # Rebuild containers
+   docker compose down
+   docker compose build --no-cache
+   docker compose up
+   ```
+
+### Verification Commands
+
+```bash
+# Verify build
+go build -o kademlia-node && echo "Build successful"
+
+# Verify tests
+go test ./kademlia && echo "All tests passed"
+
+# Verify Docker
+docker compose config --quiet && echo "Docker config valid"
 ```
 
-## Change the Project Name
-To customize the project name, follow these steps:
+## Architecture
 
-1. Create a new Git repo.
+### Protocol Implementation
 
-2. **Edit `go.mod`** 
-   Change the module path from: `module github.com/wilhelmrauston/kademlia` to your new project path.
+This Kademlia implementation follows the original paper specifications:
+- **160-bit node identifiers** using SHA-1
+- **K-bucket routing tables** with k=20
+- **XOR distance metric** for node proximity
+- **Iterative lookup algorithms**
+- **UDP transport protocol**
 
-3. **Update Import Paths**  
-Modify the import paths in the following files:
+### Thread Safety
 
-- `internal/cli/version.go`  
-  Line 6:
-  ```go
-  "github.com/wilhelmrauston/kademlia/pkg/build"
-  ```
+All storage operations are protected by:
+- `sync.RWMutex` for read/write operations
+- Atomic operations where appropriate
+- Goroutine-safe message handling
 
-- `internal/cli/talk.go`  
-  Line 4:
-  ```go
-  "github.com/wilhelmrauston/kademlia/pkg/helloworld"
-  ```
+## Contributing
 
-- `cmd/main.go`  
-  Lines 4–5:
-  ```go
-  "github.com/wilhelmrauston/kademlia/internal/cli"
-  "github.com/wilhelmrauston/kademlia/pkg/build"
-  ```
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass: `go test -v ./...`
+5. Submit a pull request
 
-Replace each instance of `github.com/wilhelmrauston/kademlia` with your new module name.
+## License
 
-4. Update Goreleaser
-Change the `binary` name to `helloworld` in the `.goreleaser.yml` file.
-
-5. Update Dockerfile 
-Change the `helloworld` in the `Dockerfile` file.
-
-6. Update Makefile
-Change binary name, and container name:
-
-```console
-BINARY_NAME := helloworld
-BUILD_IMAGE ?= test/helloworld
-PUSH_IMAGE ?= test/helloworld:v1.0.0
-```
-
-## Continuous Integration
-GitHub will automatically run tests (`make test`) when pushing changes to the `main` branch.
-
-Take a look at these configuration files for CI/CD setup:
-
-- `.github/workflows/docker_master.yaml`
-- `.github/workflows/go.yml`
-- `.github/workflows/releaser.yaml`
-- `.goreleaser.yml`
-
-**Note:**  
-The Goreleaser workflow can be used to automatically build and publish binaries on GitHub.  
-Click the **Draft a new release** button to create a new release.  
-Published releases will appear here: [GitHub Releases - kademlia](https://github.com/wilhelmrauston/kademlia/releases)
-
-The Docker workflow will automatically build and publish a Docker image on GitHub.  
-See this page: [GitHub Packages - kademlia](https://github.com/wilhelmrauston/kademlia/pkgs/container/kademlia)
-
-## Other tips
-- Run `go mod tidy` to clean up and verify dependencies.
-- To store all dependencies in the `./vendor` directory, run:
-
-  ```sh
-  go mod vendor
-  ```
-- Install and use Github Co-pilot! It is very good at generating logging statement.
-- Note that build time and current Github take is injected into the binary. Very useful for debugging to know which version you are using. 
-
-```console
-./bin/helloworld version                                                                                                                                                              21:53:42
-ab76edd
-2025-04-29T19:35:04Z
-```
+This project is part of an academic implementation of the Kademlia distributed hash table protocol.
