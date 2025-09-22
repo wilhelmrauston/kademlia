@@ -1,14 +1,14 @@
-version: '3'
+
 services:
   node1:
     build: .
-    command: ["./kademlia-node", "-port=8001"]
+    command: ["./kademlia-node", "-port=8001", "-daemon"]
     ports:
       - "8001:8001"
   
   node2:
     build: .
-    command: ["./kademlia-node", "-port=8002", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8002", "-target=node1:8001", "-daemon"]
     ports:
       - "8002:8002"
     depends_on:
@@ -16,7 +16,7 @@ services:
   
   node3:
     build: .
-    command: ["./kademlia-node", "-port=8003", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8003", "-target=node1:8001", "-daemon"]
     ports:
       - "8003:8003"
     depends_on:
@@ -24,7 +24,7 @@ services:
 
   node4:
     build: .
-    command: ["./kademlia-node", "-port=8004", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8004", "-target=node1:8001", "-daemon"]
     ports:
       - "8004:8004"
     depends_on:
@@ -32,7 +32,7 @@ services:
 
   node5:
     build: .
-    command: ["./kademlia-node", "-port=8005", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8005", "-target=node1:8001", "-daemon"]
     ports:
       - "8005:8005"
     depends_on:
@@ -40,7 +40,7 @@ services:
 
   node6:
     build: .
-    command: ["./kademlia-node", "-port=8006", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8006", "-target=node1:8001", "-daemon"]
     ports:
       - "8006:8006"
     depends_on:
@@ -48,7 +48,7 @@ services:
 
   node7:
     build: .
-    command: ["./kademlia-node", "-port=8007", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8007", "-target=node1:8001", "-daemon"]
     ports:
       - "8007:8007"
     depends_on:
@@ -56,7 +56,7 @@ services:
 
   node8:
     build: .
-    command: ["./kademlia-node", "-port=8008", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8008", "-target=node1:8001", "-daemon"]
     ports:
       - "8008:8008"
     depends_on:
@@ -64,7 +64,7 @@ services:
 
   node9:
     build: .
-    command: ["./kademlia-node", "-port=8009", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8009", "-target=node1:8001", "-daemon"]
     ports:
       - "8009:8009"
     depends_on:
@@ -72,7 +72,7 @@ services:
 
   node10:
     build: .
-    command: ["./kademlia-node", "-port=8010", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8010", "-target=node1:8001", "-daemon"]
     ports:
       - "8010:8010"
     depends_on:
@@ -80,7 +80,7 @@ services:
 
   node11:
     build: .
-    command: ["./kademlia-node", "-port=8011", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8011", "-target=node1:8001", "-daemon"]
     ports:
       - "8011:8011"
     depends_on:
@@ -88,7 +88,7 @@ services:
 
   node12:
     build: .
-    command: ["./kademlia-node", "-port=8012", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8012", "-target=node1:8001", "-daemon"]
     ports:
       - "8012:8012"
     depends_on:
@@ -96,7 +96,7 @@ services:
 
   node13:
     build: .
-    command: ["./kademlia-node", "-port=8013", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8013", "-target=node1:8001", "-daemon"]
     ports:
       - "8013:8013"
     depends_on:
@@ -104,7 +104,7 @@ services:
 
   node14:
     build: .
-    command: ["./kademlia-node", "-port=8014", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8014", "-target=node1:8001", "-daemon"]
     ports:
       - "8014:8014"
     depends_on:
@@ -112,7 +112,7 @@ services:
 
   node15:
     build: .
-    command: ["./kademlia-node", "-port=8015", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8015", "-target=node1:8001", "-daemon"]
     ports:
       - "8015:8015"
     depends_on:
@@ -120,7 +120,7 @@ services:
 
   node16:
     build: .
-    command: ["./kademlia-node", "-port=8016", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8016", "-target=node1:8001", "-daemon"]
     ports:
       - "8016:8016"
     depends_on:
@@ -128,7 +128,7 @@ services:
 
   node17:
     build: .
-    command: ["./kademlia-node", "-port=8017", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8017", "-target=node1:8001", "-daemon"]
     ports:
       - "8017:8017"
     depends_on:
@@ -136,7 +136,7 @@ services:
 
   node18:
     build: .
-    command: ["./kademlia-node", "-port=8018", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8018", "-target=node1:8001", "-daemon"]
     ports:
       - "8018:8018"
     depends_on:
@@ -144,7 +144,7 @@ services:
 
   node19:
     build: .
-    command: ["./kademlia-node", "-port=8019", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8019", "-target=node1:8001", "-daemon"]
     ports:
       - "8019:8019"
     depends_on:
@@ -152,7 +152,7 @@ services:
 
   node20:
     build: .
-    command: ["./kademlia-node", "-port=8020", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8020", "-target=node1:8001", "-daemon"]
     ports:
       - "8020:8020"
     depends_on:
@@ -160,7 +160,7 @@ services:
 
   node21:
     build: .
-    command: ["./kademlia-node", "-port=8021", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8021", "-target=node1:8001", "-daemon"]
     ports:
       - "8021:8021"
     depends_on:
@@ -168,7 +168,7 @@ services:
 
   node22:
     build: .
-    command: ["./kademlia-node", "-port=8022", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8022", "-target=node1:8001", "-daemon"]
     ports:
       - "8022:8022"
     depends_on:
@@ -176,7 +176,7 @@ services:
 
   node23:
     build: .
-    command: ["./kademlia-node", "-port=8023", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8023", "-target=node1:8001", "-daemon"]
     ports:
       - "8023:8023"
     depends_on:
@@ -184,7 +184,7 @@ services:
 
   node24:
     build: .
-    command: ["./kademlia-node", "-port=8024", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8024", "-target=node1:8001", "-daemon"]
     ports:
       - "8024:8024"
     depends_on:
@@ -192,7 +192,7 @@ services:
 
   node25:
     build: .
-    command: ["./kademlia-node", "-port=8025", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8025", "-target=node1:8001", "-daemon"]
     ports:
       - "8025:8025"
     depends_on:
@@ -200,7 +200,7 @@ services:
 
   node26:
     build: .
-    command: ["./kademlia-node", "-port=8026", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8026", "-target=node1:8001", "-daemon"]
     ports:
       - "8026:8026"
     depends_on:
@@ -208,7 +208,7 @@ services:
 
   node27:
     build: .
-    command: ["./kademlia-node", "-port=8027", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8027", "-target=node1:8001", "-daemon"]
     ports:
       - "8027:8027"
     depends_on:
@@ -216,7 +216,7 @@ services:
 
   node28:
     build: .
-    command: ["./kademlia-node", "-port=8028", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8028", "-target=node1:8001", "-daemon"]
     ports:
       - "8028:8028"
     depends_on:
@@ -224,7 +224,7 @@ services:
 
   node29:
     build: .
-    command: ["./kademlia-node", "-port=8029", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8029", "-target=node1:8001", "-daemon"]
     ports:
       - "8029:8029"
     depends_on:
@@ -232,7 +232,7 @@ services:
 
   node30:
     build: .
-    command: ["./kademlia-node", "-port=8030", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8030", "-target=node1:8001", "-daemon"]
     ports:
       - "8030:8030"
     depends_on:
@@ -240,7 +240,7 @@ services:
 
   node31:
     build: .
-    command: ["./kademlia-node", "-port=8031", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8031", "-target=node1:8001", "-daemon"]
     ports:
       - "8031:8031"
     depends_on:
@@ -248,7 +248,7 @@ services:
 
   node32:
     build: .
-    command: ["./kademlia-node", "-port=8032", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8032", "-target=node1:8001", "-daemon"]
     ports:
       - "8032:8032"
     depends_on:
@@ -256,7 +256,7 @@ services:
 
   node33:
     build: .
-    command: ["./kademlia-node", "-port=8033", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8033", "-target=node1:8001", "-daemon"]
     ports:
       - "8033:8033"
     depends_on:
@@ -264,7 +264,7 @@ services:
 
   node34:
     build: .
-    command: ["./kademlia-node", "-port=8034", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8034", "-target=node1:8001", "-daemon"]
     ports:
       - "8034:8034"
     depends_on:
@@ -272,7 +272,7 @@ services:
 
   node35:
     build: .
-    command: ["./kademlia-node", "-port=8035", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8035", "-target=node1:8001", "-daemon"]
     ports:
       - "8035:8035"
     depends_on:
@@ -280,7 +280,7 @@ services:
 
   node36:
     build: .
-    command: ["./kademlia-node", "-port=8036", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8036", "-target=node1:8001", "-daemon"]
     ports:
       - "8036:8036"
     depends_on:
@@ -288,7 +288,7 @@ services:
 
   node37:
     build: .
-    command: ["./kademlia-node", "-port=8037", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8037", "-target=node1:8001", "-daemon"]
     ports:
       - "8037:8037"
     depends_on:
@@ -296,7 +296,7 @@ services:
 
   node38:
     build: .
-    command: ["./kademlia-node", "-port=8038", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8038", "-target=node1:8001", "-daemon"]
     ports:
       - "8038:8038"
     depends_on:
@@ -304,7 +304,7 @@ services:
 
   node39:
     build: .
-    command: ["./kademlia-node", "-port=8039", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8039", "-target=node1:8001", "-daemon"]
     ports:
       - "8039:8039"
     depends_on:
@@ -312,7 +312,7 @@ services:
 
   node40:
     build: .
-    command: ["./kademlia-node", "-port=8040", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8040", "-target=node1:8001", "-daemon"]
     ports:
       - "8040:8040"
     depends_on:
@@ -320,7 +320,7 @@ services:
 
   node41:
     build: .
-    command: ["./kademlia-node", "-port=8041", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8041", "-target=node1:8001", "-daemon"]
     ports:
       - "8041:8041"
     depends_on:
@@ -328,7 +328,7 @@ services:
 
   node42:
     build: .
-    command: ["./kademlia-node", "-port=8042", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8042", "-target=node1:8001", "-daemon"]
     ports:
       - "8042:8042"
     depends_on:
@@ -336,7 +336,7 @@ services:
 
   node43:
     build: .
-    command: ["./kademlia-node", "-port=8043", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8043", "-target=node1:8001", "-daemon"]
     ports:
       - "8043:8043"
     depends_on:
@@ -344,7 +344,7 @@ services:
 
   node44:
     build: .
-    command: ["./kademlia-node", "-port=8044", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8044", "-target=node1:8001", "-daemon"]
     ports:
       - "8044:8044"
     depends_on:
@@ -352,7 +352,7 @@ services:
 
   node45:
     build: .
-    command: ["./kademlia-node", "-port=8045", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8045", "-target=node1:8001", "-daemon"]
     ports:
       - "8045:8045"
     depends_on:
@@ -360,7 +360,7 @@ services:
 
   node46:
     build: .
-    command: ["./kademlia-node", "-port=8046", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8046", "-target=node1:8001", "-daemon"]
     ports:
       - "8046:8046"
     depends_on:
@@ -368,7 +368,7 @@ services:
 
   node47:
     build: .
-    command: ["./kademlia-node", "-port=8047", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8047", "-target=node1:8001", "-daemon"]
     ports:
       - "8047:8047"
     depends_on:
@@ -376,7 +376,7 @@ services:
 
   node48:
     build: .
-    command: ["./kademlia-node", "-port=8048", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8048", "-target=node1:8001", "-daemon"]
     ports:
       - "8048:8048"
     depends_on:
@@ -384,7 +384,7 @@ services:
 
   node49:
     build: .
-    command: ["./kademlia-node", "-port=8049", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8049", "-target=node1:8001", "-daemon"]
     ports:
       - "8049:8049"
     depends_on:
@@ -392,7 +392,7 @@ services:
 
   node50:
     build: .
-    command: ["./kademlia-node", "-port=8050", "-target=node1:8001"]
+    command: ["./kademlia-node", "-port=8050", "-target=node1:8001", "-daemon"]
     ports:
       - "8050:8050"
     depends_on:
