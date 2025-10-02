@@ -1,14 +1,22 @@
-FROM golang
+# Use Go image directly (larger but simpler)
+FROM golang:1.23.5
 
 WORKDIR /app
-RUN cd /app
 
-RUN apt-get update 
-RUN git clone https://github.com/wilhelmrauston/kademlia.git
-RUN cd kademlia && git pull
+# Copy source code
+COPY . .
 
-RUN cd kademlia && go build -o main .
+# Download dependencies
+RUN go mod download
 
-EXPOSE 8001
+# Build the application
+RUN go build -o main .
 
-ENTRYPOINT [ "kademlia/main" ]
+# Make sure binary is executable
+RUN chmod +x ./main
+
+# Verify the binary exists
+RUN ls -la ./main
+
+# Run the application
+CMD ["./main"]

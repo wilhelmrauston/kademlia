@@ -1,7 +1,6 @@
 package kademlia
 
-const bucketSize = 20
-
+const bucketSize int = 20
 
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
@@ -20,8 +19,16 @@ func NewRoutingTable(me Contact) *RoutingTable {
 	return routingTable
 }
 
-// AddContact add a new contact to the correct Bucket
+// GetMe returns the self contact
+func (routingTable *RoutingTable) GetMe() *Contact {
+	return &routingTable.me
+}
+
+// AddContact add a new contact to the correct Bucket (or move to front if it already exists)
 func (routingTable *RoutingTable) AddContact(contact Contact) {
+	//should the node be added? look at the bucket it should belong to
+	// and see if the next node is alive.
+	// add check if oldest contact is alive (should this be here or somewhere else?)
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
 	bucket.AddContact(contact)
@@ -67,4 +74,19 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 	}
 
 	return IDLength*8 - 1
+}
+func (routingTable *RoutingTable) getBucket(index int) bucket {
+	return *routingTable.buckets[index]
+}
+
+// IsContactInRoutingTable checks if a contact is in the routing table
+func (routingTable *RoutingTable) IsContactInRoutingTable(contact *Contact) bool {
+	index := routingTable.getBucketIndex(contact.ID)
+	bucket := routingTable.buckets[index]
+	return bucket.IsContactInBucket(contact)
+}
+
+// IsBucketFull checks if a bucket is full
+func (routingTable *RoutingTable) IsBucketFull(bucket *bucket) bool {
+	return bucket.Len() >= bucketSize
 }
