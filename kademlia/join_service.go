@@ -23,16 +23,8 @@ func (js *JoinService) JoinNetwork(bootstrapAddr string) error {
     // Step 2: Add bootstrap to routing table (this happens automatically in ping handler)
     time.Sleep(2 * time.Second)
     
-    // Step 3: Perform lookup for own node ID (paper requirement)
-    fmt.Printf("Performing self-lookup to populate routing table\n")
-    contacts := js.Node.IterativeFindNode(js.Node.ID)
+    js.Node.PerformSelfLookup()
     
-    // Add discovered contacts to routing table
-    for _, contact := range contacts {
-        js.Node.GetRoutingTable().AddContact(contact)
-    }
-    
-    fmt.Printf("Self-lookup complete, discovered %d contacts\n", len(contacts))
     return nil
 }
 

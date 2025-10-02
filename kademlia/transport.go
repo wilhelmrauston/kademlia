@@ -100,24 +100,20 @@ func (t *UDPTransport) handleIncomingMessage(data []byte, clientAddr *net.UDPAdd
 
 func (t *UDPTransport) processMessages() {
     for envelope := range t.messageQueue {
-        // Check if this is a response to a pending request
-        if t.isResponse(envelope.Message) {
-            if t.handlePendingResponse(envelope.Message) {
-                continue // Response was matched and delivered
-            }
-        }
-        
-        // Handle as regular message (request or unmatched response)
+        // Deliver to waiter if applicable
+        _ = t.isResponse(envelope.Message) && t.handlePendingResponse(envelope.Message)
+        // IMPORTANT: do NOT return/continue here — always fall through
+
+        // Always let the handler see the message (requests *and* responses)
         response, err := t.handler.HandleMessage(envelope.Message, envelope.Sender)
         if err != nil {
             fmt.Printf("ERROR: Message handling failed: %v\n", err)
             continue
         }
-        
-        // Send response if one was generated
+
+        // Only requests should produce replies; your response-handlers should return zero-value Message
         if response.Type != 0 {
-            err = t.sendResponse(response, envelope.Sender)
-            if err != nil {
+            if err := t.sendResponse(response, envelope.Sender); err != nil {
                 fmt.Printf("ERROR: Failed to send response: %v\n", err)
             }
         }

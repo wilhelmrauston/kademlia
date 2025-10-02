@@ -80,87 +80,38 @@ func (h *KademliaMessageHandler) handlePong(msg Message) (Message, error) {
 func (h *KademliaMessageHandler) handleFindNode(msg Message) (Message, error) {
 	fmt.Printf("DEBUG: Processing FIND_NODE request\n")
 
-	// Try direct type assertion first
-	if findNodeData, ok := msg.Data.(FindNodeData); ok {
-		// Direct struct - this is the ideal case
-		fmt.Printf("DEBUG: Direct FindNodeData struct received\n")
-		fmt.Printf("DEBUG: Target ID: %s\n", findNodeData.TargetID.String())
-		
-		closestContacts := LookupNode(h.routingTable, findNodeData.TargetID)
-		fmt.Printf("DEBUG: Found %d closest contacts for target %s\n", len(closestContacts), findNodeData.TargetID.String())
-		
-		myContact := NewContact(h.nodeID, h.nodeAddress)
-		
-		response := Message{
-			Type:      FIND_NODE_RESPONSE,
-			MessageID: msg.MessageID,
-			Sender:    myContact,
-			Timestamp: time.Now().Unix(),
-			Data: FindNodeResponse{
-				Contacts: closestContacts,
-			},
-		}
-		
-		return response, nil
-	}
+    // 1) Re-marshal the generic data and decode it into the typed struct
+    dataBytes, err := json.Marshal(msg.Data)
+    if err != nil {
+        return Message{}, fmt.Errorf("failed to marshal message data: %v", err)
+    }
 
-	// Fallback: handle as map[string]interface{} from JSON unmarshaling
-	dataMap, ok := msg.Data.(map[string]interface{})
-	if !ok {
-		return Message{}, fmt.Errorf("invalid FIND_NODE data format: expected FindNodeData or map, got %T", msg.Data)
-	}
+    var req FindNodeData
+    if err := json.Unmarshal(dataBytes, &req); err != nil {
+        return Message{}, fmt.Errorf("failed to unmarshal FIND_NODE data: %v", err)
+    }
+    if req.TargetID == nil {
+        return Message{}, fmt.Errorf("missing target_id in FIND_NODE request")
+    }
 
-	fmt.Printf("DEBUG: Handling FIND_NODE data as map: %+v\n", dataMap)
+    targetID := req.TargetID
+    fmt.Printf("DEBUG: Target ID (FIND_NODE): %s\n", targetID.String())
 
-	// Extract target_id from the map
-	targetIDRaw, exists := dataMap["target_id"]
-	if !exists {
-		return Message{}, fmt.Errorf("missing target_id in FIND_NODE data")
-	}
+    // 2) Find closest contacts (consider returning K, not Alpha)
+    closestContacts := LookupNode(h.routingTable, targetID)
 
-	// Handle target_id as array of numbers (from JSON)
-	targetIDSlice, ok := targetIDRaw.([]interface{})
-	if !ok {
-		return Message{}, fmt.Errorf("invalid target_id format: expected array, got %T", targetIDRaw)
-	}
+    myContact := NewContact(h.nodeID, h.nodeAddress)
 
-	if len(targetIDSlice) != IDLength {
-		return Message{}, fmt.Errorf("invalid target_id length: expected %d, got %d", IDLength, len(targetIDSlice))
-	}
+    // 3) Build response — IMPORTANT: echo back the SAME MessageID
+    resp := Message{
+        Type:      FIND_NODE_RESPONSE,
+        MessageID: msg.MessageID,
+        Sender:    myContact,
+        Data:      FindNodeResponse{Contacts: closestContacts},
+        Timestamp: time.Now().Unix(),
+    }
 
-	// Convert []interface{} to KademliaID
-	var targetID KademliaID
-	for i, val := range targetIDSlice {
-		if i >= IDLength {
-			break
-		}
-		
-		// JSON numbers come as float64
-		if floatVal, ok := val.(float64); ok {
-			targetID[i] = byte(floatVal)
-		} else {
-			return Message{}, fmt.Errorf("invalid byte value in target_id at index %d: %T", i, val)
-		}
-	}
-
-	fmt.Printf("DEBUG: Reconstructed Target ID: %s\n", targetID.String())
-	
-	closestContacts := LookupNode(h.routingTable, &targetID)
-	fmt.Printf("DEBUG: Found %d closest contacts for target %s\n", len(closestContacts), targetID.String())
-	
-	myContact := NewContact(h.nodeID, h.nodeAddress)
-	
-	response := Message{
-		Type:      FIND_NODE_RESPONSE,
-		MessageID: msg.MessageID,
-		Sender:    myContact,
-		Timestamp: time.Now().Unix(),
-		Data: FindNodeResponse{
-			Contacts: closestContacts,
-		},
-	}
-	
-	return response, nil
+    return resp, nil
 }
 
 func (h *KademliaMessageHandler) handleFindNodeResponse(msg Message) (Message, error) {
