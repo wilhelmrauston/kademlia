@@ -192,21 +192,16 @@ func startCLI(node *kademlia.Node) {
                 continue
             }
             
-            content := parts[1]
             
-            // Create hash of the content (this is the key)
-            hash := kademlia.HashKey(content)
-            
-            fmt.Printf("Storing content with hash: %s\n", hash.String())
-            
-            // Store the content in the network
-            err := node.StoreValue(hash.String(), content)
-            if err != nil {
-                fmt.Printf("Error storing content: %v\n", err)
-            } else {
-                fmt.Printf("Successfully stored content!\n")
-                fmt.Printf("Hash: %s\n", hash.String())
-            }
+            content := strings.TrimSpace(strings.Join(parts[1:], " "))
+			if content == "" { fmt.Println("usage: put <content>"); break }
+			// We store by the VALUE’s hash; print that hash to the user
+			hashHex := kademlia.HashKey(content).String()
+			if err := node.StoreValue(content, content); err != nil {
+				fmt.Printf("put failed: %v\n", err)
+				break
+			}
+			fmt.Println(hashHex)
             
         case "get":
             if len(parts) < 2 {
@@ -215,22 +210,16 @@ func startCLI(node *kademlia.Node) {
                 continue
             }
             
-            hash := strings.TrimSpace(parts[1])
+            hashHex := strings.TrimSpace(strings.Join(parts[1:], " "))
             
-            fmt.Printf("Looking up content for hash: %s\n", hash)
-            
-            // Retrieve the content from the network
-            value, err := node.FindValue(hash)
-            if err != nil {
-                fmt.Printf("Error retrieving content: %v\n", err)
-            } else {
-                fmt.Printf("Successfully retrieved content!\n")
-                fmt.Printf("Content: %s\n", value)
-                
-                // Show which node we retrieved it from (this would require modifying FindValue)
-                // For now, we'll just show that it was found
-                fmt.Printf("Retrieved from network\n")
-            }
+            if hashHex == "" { fmt.Println("usage: get <hashHex>"); break }
+			v, from, err := node.FindByHash(hashHex)
+			if err != nil {
+				fmt.Printf("get failed: %v\n", err)
+				break
+			}
+			// Spec: output the contents AND the node it was retrieved from
+			fmt.Printf("%s\n(from %s)\n", v, from.Address)
             
         case "exit", "quit", "q":
             fmt.Println("Exiting CLI... (node will continue running)")

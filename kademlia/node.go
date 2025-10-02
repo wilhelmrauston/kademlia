@@ -484,10 +484,13 @@ func HashKey(key string) *KademliaID {
 // StoreValue stores a key-value pair in the k closest nodes
 func (n *Node) StoreValue(key, value string) error {
 	fmt.Printf("Storing key-value pair: key=%s, value_length=%d\n", key, len(value))
-	
-	// Hash the key to get target ID
-	targetID := HashKey(key)
-	fmt.Printf("Target ID for key '%s': %s\n", key, targetID.String())
+	// We treat the VALUE’s hash as the object key
+    hashID := HashKey(value)
+    hashHex := hashID.String()
+    fmt.Printf("Storing object. hash=%s value_length=%d\n", hashHex, len(value))
+
+    // Route towards the hash of the VALUE
+    targetID := hashID
 	
 	// Find k closest nodes to the target
 	closestNodes := n.IterativeFindNode(targetID)
@@ -513,7 +516,7 @@ func (n *Node) StoreValue(key, value string) error {
 	
 	// Store locally if we're close enough
 	if shouldStoreLocally {
-		n.dataStore.Store(key, value)
+		n.dataStore.Store(hashHex, value)
 		successCount++
 		fmt.Printf("Stored locally on node %s\n", n.ID.String()[:8])
 	}
@@ -527,7 +530,7 @@ func (n *Node) StoreValue(key, value string) error {
 			continue
 		}
 		
-		err := n.SendStore(contact.Address, key, value)
+	 	err := n.SendStore(contact.Address, hashHex, value)
 		if err != nil {
 			fmt.Printf("Failed to store at %s: %v\n", contact.Address, err)
 		} else {
@@ -562,6 +565,93 @@ func (n *Node) FindValue(key string) (string, error) {
 	// Perform iterative lookup using FIND_VALUE
 	return n.IterativeFindValue(targetID, key)
 }
+
+// FindByHash looks up a value by its hex hash and returns (value, fromContact).
+func (n *Node) FindByHash(hashHex string) (string, Contact, error) {
+    // 1) Local check by hash as stored in our DataStore
+    if v, ok := n.dataStore.Get(hashHex); ok {
+        return v, NewContact(n.ID, n.Address), nil
+    }
+
+    // 2) Parse hex -> KademliaID, then do iterative FIND_VALUE using the same hash string in RPCs
+    targetID := NewKademliaID(hashHex)
+    return n.iterativeFindValueByHash(targetID, hashHex)
+}
+
+// iterativeFindValueByHash performs the FIND_VALUE walk where the "key" we send over the wire
+// is the already-hex-encoded hash. We return (value, fromContact) on first success.
+func (n *Node) iterativeFindValueByHash(targetID *KademliaID, hashHex string) (string, Contact, error) {
+    alpha := n.config.Alpha
+    k := n.config.K
+
+    // Seed from routing table
+    candidates := n.routingTable.FindClosestContacts(targetID, k)
+    if len(candidates) == 0 {
+        return "", Contact{}, fmt.Errorf("no nodes available for lookup")
+    }
+
+    queried := make(map[string]bool)
+    bestChanged := true
+
+    for round := 0; round < 10 && bestChanged; round++ {
+        // pick next α unqueried
+        toQuery := make([]Contact, 0, alpha)
+        for _, c := range candidates {
+            if !queried[c.Address] && len(toQuery) < alpha {
+                toQuery = append(toQuery, c)
+            }
+        }
+        if len(toQuery) == 0 {
+            break
+        }
+
+        bestChanged = false
+		timeout := 5 * time.Second
+
+        for _, contact := range toQuery {
+            queried[contact.Address] = true
+
+            // Send FIND_VALUE(hashHex)
+			res := n.queryNodeForValue(contact, hashHex, timeout)
+			if !res.Found && len(res.Contacts) == 0 {
+				continue
+			}
+
+            if res.Found {
+                // SUCCESS: value came from `contact`
+                return res.Value, contact, nil
+            }
+
+            // Merge returned contacts and re-sort by distance
+            for i := range res.Contacts {
+                res.Contacts[i].CalcDistance(targetID)
+            }
+            merged := append(candidates, res.Contacts...)
+            sort.Slice(merged, func(i, j int) bool {
+                return merged[i].distance.Less(merged[j].distance)
+            })
+            // keep top k unique
+            uniq := make([]Contact, 0, k)
+            seen := map[string]bool{}
+            for _, c := range merged {
+                if !seen[c.Address] {
+                    uniq = append(uniq, c)
+                    seen[c.Address] = true
+                    if len(uniq) == k {
+                        break
+                    }
+                }
+            }
+            if len(uniq) > 0 && (len(candidates) == 0 || !uniq[0].distance.Equals(candidates[0].distance)) {
+                bestChanged = true
+            }
+            candidates = uniq
+        }
+    }
+
+    return "", Contact{}, fmt.Errorf("value not found")
+}
+
 
 // SendStore sends a STORE RPC to a target address
 func (n *Node) SendStore(targetAddr, key, value string) error {
@@ -704,9 +794,9 @@ func (n *Node) IterativeFindValue(targetID *KademliaID, key string) (string, err
 
 // FindValueResult represents the result of a FIND_VALUE query
 type FindValueResult struct {
-	Value    string
-	Found    bool
-	Contacts []Contact
+    Found    bool
+    Value    string
+    Contacts []Contact
 }
 
 // parallelFindValue sends FIND_VALUE requests to multiple nodes concurrently
