@@ -143,58 +143,48 @@ func (h *KademliaMessageHandler) handleFindNodeResponse(msg Message) (Message, e
 func (h *KademliaMessageHandler) handleFindValue(msg Message) (Message, error) {
     fmt.Printf("DEBUG: Processing FIND_VALUE request\n")
     
-    // Parse the FIND_VALUE data
-    dataBytes, err := json.Marshal(msg.Data)
-    if err != nil {
-        return Message{}, fmt.Errorf("failed to marshal message data: %v", err)
+    // Parse key
+    key := ""
+    if d, ok := msg.Data.(FindValueData); ok {
+        key = d.Key
+    } else if m, ok := msg.Data.(map[string]interface{}); ok {
+        if s, ok := m["key"].(string); ok { key = s }
     }
-    
-    var findValueData FindValueData
-    err = json.Unmarshal(dataBytes, &findValueData)
-    if err != nil {
-        return Message{}, fmt.Errorf("failed to unmarshal FIND_VALUE data: %v", err)
+    if key == "" {
+        return Message{}, fmt.Errorf("FIND_VALUE: missing key")
     }
-    
-    key := findValueData.Key
-    fmt.Printf("DEBUG: Looking for value with key: %s\n", key)
-    
-    // Check if we have the value locally
-    if value, exists := h.dataStore.Get(key); exists {
-        fmt.Printf("SUCCESS: Found value locally for key %s\n", key)
-        
-        myContact := NewContact(h.nodeID, h.nodeAddress)
-        response := Message{
+
+    my := NewContact(h.nodeID, h.nodeAddress)
+
+    // If we have it locally, return the value
+    if v, ok := h.dataStore.Get(key); ok {
+        return Message{
             Type:      FIND_VALUE_RESPONSE,
             MessageID: msg.MessageID,
-            Sender:    myContact,
+            Sender:    my,
             Timestamp: time.Now().Unix(),
             Data: FindValueResponse{
-                Found: true,
-                Value: value,
+                Found:    true,
+                Value:    v,
+                Contacts: nil,
             },
-        }
-        return response, nil
+        }, nil
     }
-    
-    // Value not found locally, return closest contacts instead
-    fmt.Printf("DEBUG: Value not found locally, returning closest contacts\n")
-    
-    targetID := HashKey(key)
-    closestContacts := LookupNode(h.routingTable, targetID)
-    
-    myContact := NewContact(h.nodeID, h.nodeAddress)
-    response := Message{
+
+    // Otherwise, return k closest contacts towards the key hash
+    target := HashKey(key)
+    contacts := h.routingTable.FindClosestContacts(target, h.config.K)
+
+    return Message{
         Type:      FIND_VALUE_RESPONSE,
         MessageID: msg.MessageID,
-        Sender:    myContact,
+        Sender:    my,
         Timestamp: time.Now().Unix(),
         Data: FindValueResponse{
             Found:    false,
-            Contacts: closestContacts,
+            Contacts: contacts,
         },
-    }
-    
-    return response, nil
+    }, nil
 }
 
 func (h *KademliaMessageHandler) handleFindValueResponse(msg Message) (Message, error) {
