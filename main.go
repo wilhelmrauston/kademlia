@@ -18,7 +18,7 @@ type AppConfig struct {
 	BootstrapAddr string
 	NodeID        string
 	IP            string
-	CLI           bool  // Add this field
+	CLI           bool // Add this field
 }
 
 func parseFlags() *AppConfig {
@@ -26,7 +26,7 @@ func parseFlags() *AppConfig {
 	flag.IntVar(&config.Port, "port", 8001, "Port to listen on")
 	flag.StringVar(&config.BootstrapAddr, "target", "", "Bootstrap node address (host:port)")
 	flag.StringVar(&config.NodeID, "id", "", "Node ID (optional, random if empty)")
-	flag.BoolVar(&config.CLI, "cli", false, "Run interactive CLI")  // Add this line
+	flag.BoolVar(&config.CLI, "cli", false, "Run interactive CLI") // Add this line
 	flag.Parse()
 	config.IP = "0.0.0.0" // Listen on all interfaces for Docker
 	return config
@@ -42,7 +42,7 @@ func main() {
 	var address string
 	if appConfig.BootstrapAddr == "" {
 		// Bootstrap node - use node1 for external communication
-		address = "node1:8001"  // This is what other nodes will use to contact us
+		address = "node1:8001" // This is what other nodes will use to contact us
 	} else {
 		// Regular nodes keep their current logic
 		address = fmt.Sprintf("node%d:8000", appConfig.Port-8000)
@@ -51,7 +51,7 @@ func main() {
 	// Initialize node with data store support
 	fmt.Printf("Initializing Kademlia node...\n")
 	node := kademlia.NewNode(address, appConfig.NodeID, kademliaConfig)
-	
+
 	fmt.Printf("Node ID: %s\n", node.ID.String())
 	fmt.Printf("Node Address: %s\n", node.Address)
 
@@ -92,12 +92,12 @@ func main() {
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
-		
+
 		for range ticker.C {
 			contacts := node.GetRoutingTable().GetAllContacts()
 			keys := node.GetDataStore().GetAllKeys()
-			
-			fmt.Printf("INFO: Node %s has %d contacts, storing %d keys\n", 
+
+			fmt.Printf("INFO: Node %s has %d contacts, storing %d keys\n",
 				node.ID.String()[:8], len(contacts), len(keys))
 		}
 	}()
@@ -106,18 +106,18 @@ func main() {
 	if appConfig.BootstrapAddr != "" {
 		go func() {
 			time.Sleep(10 * time.Second) // Wait for network to stabilize
-			
+
 			// Store a test value
 			testKey := fmt.Sprintf("node-%d-message", appConfig.Port)
 			testValue := fmt.Sprintf("Hello from node %d at %s", appConfig.Port, time.Now().Format("15:04:05"))
-			
+
 			fmt.Printf("Storing test data: %s -> %s\n", testKey, testValue)
 			err := node.StoreValue(testKey, testValue)
 			if err != nil {
 				fmt.Printf("Failed to store test data: %v\n", err)
 			} else {
 				fmt.Printf("Successfully stored test data\n")
-				
+
 				// Try to retrieve it after a moment
 				time.Sleep(2 * time.Second)
 				value, err := node.FindValue(testKey)
@@ -137,7 +137,7 @@ func main() {
 	} else {
 		fmt.Printf("Node %s is running. No CLI requested.\n", node.ID.String()[:8])
 	}
-	
+
 	// Main thread always waits for shutdown signal
 	fmt.Printf("Node is running. Press Ctrl+C to shutdown\n")
 	waitForShutdown(node)
@@ -167,34 +167,36 @@ func waitForShutdown(node *kademlia.Node) {
 }
 
 func startCLI(node *kademlia.Node) {
-    scanner := bufio.NewScanner(os.Stdin)
-    fmt.Println("Kademlia CLI ready. Commands: put <content>, get <hash>, exit")
-    
-    for {
-        fmt.Print("> ")
-        if !scanner.Scan() {
-            break
-        }
-        
-        input := strings.TrimSpace(scanner.Text())
-        if input == "" {
-            continue
-        }
-        
-        parts := strings.SplitN(input, " ", 2)
-        command := strings.ToLower(parts[0])
-        
-        switch command {
-        case "put":
-            if len(parts) < 2 {
-                fmt.Println("Usage: put <content>")
-                fmt.Println("Example: put \"Hello, World!\"")
-                continue
-            }
-            
-            
-            content := strings.TrimSpace(strings.Join(parts[1:], " "))
-			if content == "" { fmt.Println("usage: put <content>"); break }
+	scanner := bufio.NewScanner(os.Stdin)
+	fmt.Println("Kademlia CLI ready. Commands: put <content>, get <hash>, exit")
+
+	for {
+		fmt.Print("> ")
+		if !scanner.Scan() {
+			break
+		}
+
+		input := strings.TrimSpace(scanner.Text())
+		if input == "" {
+			continue
+		}
+
+		parts := strings.SplitN(input, " ", 2)
+		command := strings.ToLower(parts[0])
+
+		switch command {
+		case "put":
+			if len(parts) < 2 {
+				fmt.Println("Usage: put <content>")
+				fmt.Println("Example: put \"Hello, World!\"")
+				continue
+			}
+
+			content := strings.TrimSpace(strings.Join(parts[1:], " "))
+			if content == "" {
+				fmt.Println("usage: put <content>")
+				break
+			}
 			// We store by the VALUE’s hash; print that hash to the user
 			hashHex := kademlia.HashKey(content).String()
 			if err := node.StoreValue(content, content); err != nil {
@@ -202,17 +204,20 @@ func startCLI(node *kademlia.Node) {
 				break
 			}
 			fmt.Println(hashHex)
-            
-        case "get":
-            if len(parts) < 2 {
-                fmt.Println("Usage: get <hash>")
-                fmt.Println("Example: get 1a2b3c4d5e...")
-                continue
-            }
-            
-            hashHex := strings.TrimSpace(strings.Join(parts[1:], " "))
-            
-            if hashHex == "" { fmt.Println("usage: get <hashHex>"); break }
+
+		case "get":
+			if len(parts) < 2 {
+				fmt.Println("Usage: get <hash>")
+				fmt.Println("Example: get 1a2b3c4d5e...")
+				continue
+			}
+
+			hashHex := strings.TrimSpace(strings.Join(parts[1:], " "))
+
+			if hashHex == "" {
+				fmt.Println("usage: get <hashHex>")
+				break
+			}
 			v, from, err := node.FindByHash(hashHex)
 			if err != nil {
 				fmt.Printf("get failed: %v\n", err)
@@ -220,68 +225,69 @@ func startCLI(node *kademlia.Node) {
 			}
 			// Spec: output the contents AND the node it was retrieved from
 			fmt.Printf("%s\n(from %s)\n", v, from.Address)
-            
-        case "exit", "quit", "q":
-            fmt.Println("Exiting CLI... (node will continue running)")
-            go func() {
-                // Wait for shutdown signal in background
-                c := make(chan os.Signal, 1)
-                signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-                <-c
-                fmt.Printf("\nShutdown signal received, cleaning up...\n")
-                node.Stop()
-                fmt.Printf("Shutdown complete\n")
-                os.Exit(0)
-            }()
-            return
-            
-        case "help", "h":
-            fmt.Println("Available commands:")
-            fmt.Println("  put <content>  - Store content in the network and get its hash")
-            fmt.Println("  get <hash>     - Retrieve content by its hash")
-            fmt.Println("  status         - Show node status and routing table info")
-            fmt.Println("  exit           - Exit the CLI")
-            fmt.Println("  help           - Show this help message")
-            
-        case "status":
-            // Show node information
-            contacts := node.GetRoutingTable().GetAllContacts()
-            keys := node.GetDataStore().GetAllKeys()
-            
-            fmt.Printf("=== Node Status ===\n")
-            fmt.Printf("Node ID: %s\n", node.ID.String())
-            fmt.Printf("Address: %s\n", node.Address)
-            fmt.Printf("Known contacts: %d\n", len(contacts))
-            fmt.Printf("Stored keys: %d\n", len(keys))
-            
-            if len(contacts) > 0 {
-                fmt.Printf("\nFirst 5 contacts:\n")
-                for i, contact := range contacts {
-                    if i >= 5 {
-                        break
-                    }
-                    fmt.Printf("  %s (%s)\n", contact.ID.String()[:16]+"...", contact.Address)
-                }
-            }
-            
-            if len(keys) > 0 {
-                fmt.Printf("\nStored keys:\n")
-                for i, key := range keys {
-                    if i >= 5 {
-                        fmt.Printf("  ... and %d more\n", len(keys)-5)
-                        break
-                    }
-                    fmt.Printf("  %s\n", key)
-                }
-            }
-            
-        default:
-            fmt.Printf("Unknown command: %s\n", command)
-            fmt.Println("Type 'help' for available commands")
-        }
-    }
-    
-    if err := scanner.Err(); err != nil {
-        fmt.Printf("Error reading input: %v\n", err)
-    }
+
+		case "exit", "quit", "q":
+			fmt.Println("Exiting CLI and shutting down node...")
+			// Send SIGINT (Ctrl+C) to ourselves
+			process, err := os.FindProcess(os.Getpid())
+			if err != nil {
+				fmt.Printf("Error finding process: %v\n", err)
+				return
+			}
+			err = process.Signal(syscall.SIGINT)
+			if err != nil {
+				fmt.Printf("Error sending signal: %v\n", err)
+				return
+			}
+			return
+
+		case "help", "h":
+			fmt.Println("Available commands:")
+			fmt.Println("  put <content>  - Store content in the network and get its hash")
+			fmt.Println("  get <hash>     - Retrieve content by its hash")
+			fmt.Println("  status         - Show node status and routing table info")
+			fmt.Println("  exit           - Exit the CLI")
+			fmt.Println("  help           - Show this help message")
+
+		case "status":
+			// Show node information
+			contacts := node.GetRoutingTable().GetAllContacts()
+			keys := node.GetDataStore().GetAllKeys()
+
+			fmt.Printf("=== Node Status ===\n")
+			fmt.Printf("Node ID: %s\n", node.ID.String())
+			fmt.Printf("Address: %s\n", node.Address)
+			fmt.Printf("Known contacts: %d\n", len(contacts))
+			fmt.Printf("Stored keys: %d\n", len(keys))
+
+			if len(contacts) > 0 {
+				fmt.Printf("\nFirst 5 contacts:\n")
+				for i, contact := range contacts {
+					if i >= 5 {
+						break
+					}
+					fmt.Printf("  %s (%s)\n", contact.ID.String()[:16]+"...", contact.Address)
+				}
+			}
+
+			if len(keys) > 0 {
+				fmt.Printf("\nStored keys:\n")
+				for i, key := range keys {
+					if i >= 5 {
+						fmt.Printf("  ... and %d more\n", len(keys)-5)
+						break
+					}
+					fmt.Printf("  %s\n", key)
+				}
+			}
+
+		default:
+			fmt.Printf("Unknown command: %s\n", command)
+			fmt.Println("Type 'help' for available commands")
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		fmt.Printf("Error reading input: %v\n", err)
+	}
 }

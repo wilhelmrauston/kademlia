@@ -1,13 +1,15 @@
 package kademlia
 
-const bucketSize = 20
+import "sync"
 
+const bucketSize = 20
 
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
 type RoutingTable struct {
 	me      Contact
 	buckets [IDLength * 8]*bucket
+	mutex   sync.RWMutex // Protects concurrent access to buckets
 }
 
 // NewRoutingTable returns a new instance of a RoutingTable
@@ -22,6 +24,9 @@ func NewRoutingTable(me Contact) *RoutingTable {
 
 // AddContact add a new contact to the correct Bucket
 func (routingTable *RoutingTable) AddContact(contact Contact) {
+	routingTable.mutex.Lock()
+	defer routingTable.mutex.Unlock()
+
 	bucketIndex := routingTable.getBucketIndex(contact.ID)
 	bucket := routingTable.buckets[bucketIndex]
 	bucket.AddContact(contact)
@@ -29,6 +34,9 @@ func (routingTable *RoutingTable) AddContact(contact Contact) {
 
 // FindClosestContacts finds the count closest Contacts to the target in the RoutingTable
 func (routingTable *RoutingTable) FindClosestContacts(target *KademliaID, count int) []Contact {
+	routingTable.mutex.RLock()
+	defer routingTable.mutex.RUnlock()
+
 	var candidates ContactCandidates
 	bucketIndex := routingTable.getBucketIndex(target)
 	bucket := routingTable.buckets[bucketIndex]
@@ -70,13 +78,16 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 }
 
 func (routingTable *RoutingTable) GetAllContacts() []Contact {
-    var contacts []Contact
-    for i := 0; i < IDLength*8; i++ {
-        bucket := routingTable.buckets[i]
-        for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
-            contact := elt.Value.(Contact)
-            contacts = append(contacts, contact)
-        }
-    }
-    return contacts
+	routingTable.mutex.RLock()
+	defer routingTable.mutex.RUnlock()
+
+	var contacts []Contact
+	for i := 0; i < IDLength*8; i++ {
+		bucket := routingTable.buckets[i]
+		for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
+			contact := elt.Value.(Contact)
+			contacts = append(contacts, contact)
+		}
+	}
+	return contacts
 }
