@@ -42,6 +42,8 @@ func (h *KademliaMessageHandler) HandleMessage(msg Message, sender string) (Mess
 		return h.handleStore(msg)
 	case FIND_VALUE:
 		return h.handleFindValue(msg)
+	case FIND_VALUE_RESPONSE:
+		return h.handleFindValueResponse(msg)
 	default:
 		return Message{}, fmt.Errorf("unknown message type: %d", msg.Type)
 	}
@@ -194,7 +196,7 @@ func (h *KademliaMessageHandler) handleFindValue(msg Message) (Message, error) {
 		// Return the value
 		fmt.Printf("DEBUG: Found value locally for key %s\n", key)
 		response := Message{
-			Type:      FIND_VALUE,
+			Type:      FIND_VALUE_RESPONSE,
 			MessageID: msg.MessageID,
 			Sender:    myContact,
 			Timestamp: time.Now().Unix(),
@@ -211,7 +213,7 @@ func (h *KademliaMessageHandler) handleFindValue(msg Message) (Message, error) {
 		closestContacts := h.routingTable.FindClosestContacts(keyID, h.config.Alpha)
 
 		response := Message{
-			Type:      FIND_VALUE,
+			Type:      FIND_VALUE_RESPONSE,
 			MessageID: msg.MessageID,
 			Sender:    myContact,
 			Timestamp: time.Now().Unix(),
@@ -222,4 +224,36 @@ func (h *KademliaMessageHandler) handleFindValue(msg Message) (Message, error) {
 		}
 		return response, nil
 	}
+}
+
+func (h *KademliaMessageHandler) handleFindValueResponse(msg Message) (Message, error) {
+	fmt.Printf("DEBUG: Processing FIND_VALUE_RESPONSE\n")
+
+	// Extract find value response data
+	dataBytes, err := json.Marshal(msg.Data)
+	if err != nil {
+		return Message{}, fmt.Errorf("failed to marshal find value response data: %v", err)
+	}
+
+	var responseData FindValueResponse
+	err = json.Unmarshal(dataBytes, &responseData)
+	if err != nil {
+		return Message{}, fmt.Errorf("failed to unmarshal FIND_VALUE_RESPONSE data: %v", err)
+	}
+
+	if responseData.Found {
+		fmt.Printf("DEBUG: FIND_VALUE_RESPONSE contains value: %s\n", responseData.Value)
+		// Send response through channel for network-only operations
+		h.node.SendResponse(msg.MessageID, responseData.Value)
+		fmt.Printf("DEBUG: Value found in network, sent to response channel\n")
+	} else {
+		fmt.Printf("DEBUG: FIND_VALUE_RESPONSE contains %d contacts\n", len(responseData.Contacts))
+		// Add the contacts to our routing table
+		for _, contact := range responseData.Contacts {
+			h.node.routingTable.AddContact(contact)
+		}
+	}
+
+	// No response needed for a response message
+	return Message{}, nil
 }

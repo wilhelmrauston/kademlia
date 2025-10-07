@@ -2,7 +2,6 @@ package kademlia
 
 const bucketSize = 20
 
-
 // RoutingTable definition
 // keeps a refrence contact of me and an array of buckets
 type RoutingTable struct {
@@ -70,13 +69,15 @@ func (routingTable *RoutingTable) getBucketIndex(id *KademliaID) int {
 }
 
 func (routingTable *RoutingTable) GetAllContacts() []Contact {
-    var contacts []Contact
-    for i := 0; i < IDLength*8; i++ {
-        bucket := routingTable.buckets[i]
-        for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
-            contact := elt.Value.(Contact)
-            contacts = append(contacts, contact)
-        }
-    }
-    return contacts
+	var contacts []Contact
+	for i := 0; i < IDLength*8; i++ {
+		bucket := routingTable.buckets[i]
+		bucket.mutex.RLock()
+		for elt := bucket.list.Front(); elt != nil; elt = elt.Next() {
+			contact := elt.Value.(Contact)
+			contacts = append(contacts, contact)
+		}
+		bucket.mutex.RUnlock()
+	}
+	return contacts
 }

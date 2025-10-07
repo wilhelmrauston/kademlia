@@ -111,7 +111,7 @@ func handlePutCommand(node *kademlia.Node, parts []string) {
 	content := strings.Join(parts[1:], " ")
 
 	fmt.Printf("Storing content: %s\n", content)
-	hash, err := node.SendStore(content)
+	hash, err := node.SendStoreNetworkOnly(content)
 	if err != nil {
 		fmt.Printf("Error storing content: %v\n", err)
 	} else {
@@ -145,22 +145,22 @@ func handleGetCommand(node *kademlia.Node, parts []string) {
 
 	fmt.Printf("Looking for content with hash: %s\n", hash)
 
-	// First check locally
-	if content, found := node.GetValue(hash); found {
-		fmt.Printf("Content found locally!\n")
-		fmt.Printf("Content: %s\n", content)
-		fmt.Printf("Retrieved from: local node (%s)\n", node.Address)
-		return
-	}
-
-	// Try to find in network
-	content, found, err := node.SendFindValue(hash)
+	// Try network first to test distribution (skip local for testing)
+	content, found, err := node.SendFindValueNetworkOnly(hash)
 	if err != nil {
 		fmt.Printf("Error retrieving content: %v\n", err)
 	} else if found {
 		fmt.Printf("Content found in network!\n")
 		fmt.Printf("Content: %s\n", content)
 		fmt.Printf("Retrieved from: network\n")
+		return
+	}
+
+	// Fall back to local if not found in network
+	if content, found := node.GetValue(hash); found {
+		fmt.Printf("Content found locally!\n")
+		fmt.Printf("Content: %s\n", content)
+		fmt.Printf("Retrieved from: local node (%s)\n", node.Address)
 	} else {
 		fmt.Printf("Content not found in DHT\n")
 	}

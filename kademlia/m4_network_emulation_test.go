@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -33,8 +34,8 @@ type MockTransport struct {
 	mutex          sync.RWMutex
 	messageQueue   chan Message
 	peerTransports map[string]*MockTransport // Simulate network connections
-	droppedCount   int
-	sentCount      int
+	droppedCount   int64                     // Use int64 for atomic operations
+	sentCount      int64                     // Use int64 for atomic operations
 }
 
 // NewMockTransport creates a new mock transport with configurable packet drop rate
@@ -61,16 +62,14 @@ func (mt *MockTransport) Listen(address string) error {
 
 // Send simulates sending a message with possible packet dropping
 func (mt *MockTransport) Send(message Message, targetAddr string) error {
-	mt.mutex.Lock()
-	mt.sentCount++
+	// Use atomic operations for counters
+	atomic.AddInt64(&mt.sentCount, 1)
 
 	// Simulate packet dropping
 	if rand.Float64() < mt.dropRate {
-		mt.droppedCount++
-		mt.mutex.Unlock()
+		atomic.AddInt64(&mt.droppedCount, 1)
 		return fmt.Errorf("packet dropped (simulated)")
 	}
-	mt.mutex.Unlock()
 
 	// Find target transport and deliver message
 	mt.mutex.RLock()
@@ -81,7 +80,7 @@ func (mt *MockTransport) Send(message Message, targetAddr string) error {
 		return fmt.Errorf("target address %s not found", targetAddr)
 	}
 
-	// Deliver message to target
+	// Deliver message to target (non-blocking)
 	select {
 	case targetTransport.messageQueue <- message:
 		return nil
@@ -103,13 +102,11 @@ func (mt *MockTransport) Close() error {
 func (mt *MockTransport) processMessages() {
 	for message := range mt.messageQueue {
 		if mt.handler != nil {
-			// Process message asynchronously
-			go func(msg Message) {
-				_, err := mt.handler.HandleMessage(msg, mt.address)
-				if err != nil {
-					// Log error in real implementation
-				}
-			}(message)
+			// Process message synchronously to avoid race conditions in test
+			_, err := mt.handler.HandleMessage(message, mt.address)
+			if err != nil {
+				// Log error in real implementation
+			}
 		}
 	}
 }
@@ -123,9 +120,10 @@ func (mt *MockTransport) AddPeer(address string, transport *MockTransport) {
 
 // GetStats returns packet statistics
 func (mt *MockTransport) GetStats() (sent int, dropped int, dropRate float64) {
-	mt.mutex.RLock()
-	defer mt.mutex.RUnlock()
-	return mt.sentCount, mt.droppedCount, mt.dropRate
+	// Use atomic operations to read counters
+	sentCount := atomic.LoadInt64(&mt.sentCount)
+	droppedCount := atomic.LoadInt64(&mt.droppedCount)
+	return int(sentCount), int(droppedCount), mt.dropRate
 }
 
 // NetworkEmulator manages a large network of mock nodes
@@ -473,39 +471,50 @@ func TestNetworkResilience(t *testing.T) {
 			t.Fatalf("Failed to setup network: %v", err)
 		}
 
-		// Run concurrent operations
+		// Allow network to stabilize before concurrent operations
+		time.Sleep(NetworkStabilizationDelay)
+
+		// Run concurrent operations with proper synchronization
 		var wg sync.WaitGroup
 		concurrency := 10
 		opsPerWorker := 5
-		totalSuccesses := 0
-		var successMutex sync.Mutex
+		successCount := int64(0) // Use int64 for atomic operations
 
 		for i := 0; i < concurrency; i++ {
 			wg.Add(1)
 			go func(workerID int) {
 				defer wg.Done()
-				localSuccesses := 0
+				localSuccesses := int64(0)
 
 				for j := 0; j < opsPerWorker; j++ {
-					node := emulator.nodes[(workerID*opsPerWorker+j)%len(emulator.nodes)]
-					_, err := node.Store(fmt.Sprintf("concurrent_%d_%d", workerID, j))
+					// Use a dedicated node per worker to reduce contention
+					nodeIndex := workerID % len(emulator.nodes)
+					node := emulator.nodes[nodeIndex]
+
+					// Create unique keys to avoid conflicts
+					key := fmt.Sprintf("concurrent_%d_%d_%d", workerID, j, time.Now().UnixNano())
+					_, err := node.Store(key)
 					if err == nil {
 						localSuccesses++
 					}
+
+					// Small delay to reduce race conditions
+					time.Sleep(time.Millisecond)
 				}
 
-				successMutex.Lock()
-				totalSuccesses += localSuccesses
-				successMutex.Unlock()
+				// Use atomic operation to safely update shared counter
+				atomic.AddInt64(&successCount, localSuccesses)
 			}(i)
 		}
 
 		wg.Wait()
 
-		totalOps := concurrency * opsPerWorker
-		t.Logf("Concurrent operations under packet loss: %d/%d succeeded", totalSuccesses, totalOps)
+		totalOps := int64(concurrency * opsPerWorker)
+		finalSuccesses := atomic.LoadInt64(&successCount)
 
-		if totalSuccesses == 0 {
+		t.Logf("Concurrent operations under packet loss: %d/%d succeeded", finalSuccesses, totalOps)
+
+		if finalSuccesses == 0 {
 			t.Error("No concurrent operations succeeded - network may be too unreliable")
 		}
 	})

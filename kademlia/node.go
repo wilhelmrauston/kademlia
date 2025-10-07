@@ -16,6 +16,9 @@ type Node struct {
 	config       *Config
 	dataStore    map[string]string // Key-value store for data objects
 	storeMutex   sync.RWMutex      // Protect concurrent access to dataStore
+	// Response tracking for network-only operations
+	pendingResponses map[string]chan string // MessageID -> response channel
+	responseMutex    sync.RWMutex           // Protect concurrent access to pendingResponses
 }
 
 func NewNode(address string, nodeID string, config *Config) *Node {
@@ -34,12 +37,14 @@ func NewNode(address string, nodeID string, config *Config) *Node {
 
 	// Create the node first
 	node := &Node{
-		ID:           id,
-		Address:      address,
-		routingTable: rt,
-		config:       config,
-		dataStore:    make(map[string]string),
-		storeMutex:   sync.RWMutex{},
+		ID:               id,
+		Address:          address,
+		routingTable:     rt,
+		config:           config,
+		dataStore:        make(map[string]string),
+		storeMutex:       sync.RWMutex{},
+		pendingResponses: make(map[string]chan string),
+		responseMutex:    sync.RWMutex{},
 	}
 
 	// Create message handler with node as datastore
@@ -168,9 +173,15 @@ func (n *Node) SendStore(data string) (string, error) {
 			},
 		}
 
-		err := n.transport.Send(msg, contact.Address)
+		// Translate 0.0.0.0 addresses to localhost for external communication
+		targetAddr := contact.Address
+		if len(targetAddr) > 7 && targetAddr[:7] == "0.0.0.0" {
+			targetAddr = "127.0.0.1" + targetAddr[7:]
+		}
+
+		err := n.transport.Send(msg, targetAddr)
 		if err != nil {
-			fmt.Printf("Failed to send STORE to %s: %v\n", contact.Address, err)
+			fmt.Printf("Failed to send STORE to %s: %v\n", targetAddr, err)
 		} else {
 			fmt.Printf("Sent STORE message to %s for key %s\n", contact.Address, key)
 		}
@@ -182,11 +193,61 @@ func (n *Node) SendStore(data string) (string, error) {
 	return key, nil
 }
 
+// SendStoreNetworkOnly sends data only to network nodes (for testing distribution)
+func (n *Node) SendStoreNetworkOnly(data string) (string, error) {
+	// Generate hash of the data
+	key := HashData(data)
+	keyID := NewKademliaID(key)
+
+	// Find k closest nodes to the key
+	closestContacts := n.routingTable.FindClosestContacts(keyID, n.config.K)
+
+	if len(closestContacts) == 0 {
+		return key, fmt.Errorf("no contacts found for network storage")
+	}
+
+	// Send STORE messages to closest nodes (but don't store locally)
+	myContact := NewContact(n.ID, n.Address)
+
+	for _, contact := range closestContacts {
+		msg := Message{
+			Type:      STORE,
+			MessageID: generateMessageID(),
+			Sender:    myContact,
+			Timestamp: time.Now().Unix(),
+			Data: StoreData{
+				Key:   key,
+				Value: data,
+			},
+		}
+
+		// Translate 0.0.0.0 addresses to localhost for external communication
+		targetAddr := contact.Address
+		if len(targetAddr) > 7 && targetAddr[:7] == "0.0.0.0" {
+			targetAddr = "127.0.0.1" + targetAddr[7:]
+		}
+
+		err := n.transport.Send(msg, targetAddr)
+		if err != nil {
+			fmt.Printf("Failed to send STORE to %s: %v\n", targetAddr, err)
+		} else {
+			fmt.Printf("Sent STORE message to %s for key %s\n", targetAddr, key)
+		}
+	}
+
+	// Do NOT store locally for testing purposes
+	fmt.Printf("DEBUG: Stored to network only, not locally\n")
+
+	return key, nil
+}
+
 // SendFindValue sends a FIND_VALUE message to retrieve data from the network
 func (n *Node) SendFindValue(key string) (string, bool, error) {
-	// First check if we have it locally
+	// Check if we have it locally first, but continue to network lookup regardless
 	if value, exists := n.GetValue(key); exists {
 		fmt.Printf("Found value locally for key %s\n", key)
+		// For demo purposes, still return local value to show it works
+		// In production, you might want to verify with network or update local copy
 		return value, true, nil
 	}
 
@@ -211,9 +272,15 @@ func (n *Node) SendFindValue(key string) (string, bool, error) {
 			},
 		}
 
-		err := n.transport.Send(msg, contact.Address)
+		// Translate 0.0.0.0 addresses to localhost for external communication
+		targetAddr := contact.Address
+		if len(targetAddr) > 7 && targetAddr[:7] == "0.0.0.0" {
+			targetAddr = "127.0.0.1" + targetAddr[7:]
+		}
+
+		err := n.transport.Send(msg, targetAddr)
 		if err != nil {
-			fmt.Printf("Failed to send FIND_VALUE to %s: %v\n", contact.Address, err)
+			fmt.Printf("Failed to send FIND_VALUE to %s: %v\n", targetAddr, err)
 		} else {
 			fmt.Printf("Sent FIND_VALUE message to %s for key %s\n", contact.Address, key)
 		}
@@ -225,7 +292,91 @@ func (n *Node) SendFindValue(key string) (string, bool, error) {
 	return "", false, nil
 }
 
-// Store is a convenience method that calls SendStore
+// SendFindValueNetworkOnly queries only the network, not local storage (for testing)
+// Uses a simplified approach suitable for flat routing tables
+func (n *Node) SendFindValueNetworkOnly(key string) (string, bool, error) {
+	// Skip local lookup and go straight to network
+	// Simple approach: query all known contacts + discovered contacts
+	// This is sufficient for flat routing table requirements
+	queriedNodes := make(map[string]bool)
+	maxRounds := 3 // Limit to prevent excessive network traffic
+
+	for round := 0; round < maxRounds; round++ {
+		// Get all known contacts
+		allContacts := n.routingTable.GetAllContacts()
+
+		// Filter out already queried nodes
+		var newContacts []Contact
+		for _, contact := range allContacts {
+			if !queriedNodes[contact.Address] {
+				newContacts = append(newContacts, contact)
+			}
+		}
+
+		if len(newContacts) == 0 {
+			fmt.Printf("DEBUG: No new contacts found in round %d\n", round+1)
+			break
+		}
+
+		fmt.Printf("DEBUG: Round %d - Querying %d nodes\n", round+1, len(newContacts))
+
+		// Create response channel
+		responseCh := make(chan string, 1)
+		messageID := generateMessageID()
+		n.RegisterResponseChannel(messageID, responseCh)
+
+		// Send FIND_VALUE to all new contacts
+		myContact := NewContact(n.ID, n.Address)
+		sentCount := 0
+
+		for _, contact := range newContacts {
+			queriedNodes[contact.Address] = true
+
+			msg := Message{
+				Type:      FIND_VALUE,
+				MessageID: messageID,
+				Sender:    myContact,
+				Timestamp: time.Now().Unix(),
+				Data: FindValueData{
+					Key: key,
+				},
+			}
+
+			// Translate 0.0.0.0 addresses to localhost for external communication
+			targetAddr := contact.Address
+			if len(targetAddr) > 7 && targetAddr[:7] == "0.0.0.0" {
+				targetAddr = "127.0.0.1" + targetAddr[7:]
+			}
+
+			err := n.transport.Send(msg, targetAddr)
+			if err != nil {
+				fmt.Printf("Failed to send FIND_VALUE to %s: %v\n", targetAddr, err)
+			} else {
+				fmt.Printf("Sent FIND_VALUE message to %s for key %s\n", targetAddr, key)
+				sentCount++
+			}
+		}
+
+		if sentCount == 0 {
+			n.CleanupResponseChannel(messageID)
+			break
+		}
+
+		// Wait for response
+		select {
+		case value := <-responseCh:
+			n.CleanupResponseChannel(messageID)
+			fmt.Printf("Content found from network response!\n")
+			return value, true, nil
+		case <-time.After(4 * time.Second):
+			n.CleanupResponseChannel(messageID)
+			fmt.Printf("DEBUG: Round %d timeout, checking for new contacts\n", round+1)
+			// Continue to next round - FIND_VALUE responses may have added new contacts
+		}
+	}
+
+	return "", false, nil
+} // Store is a convenience method that calls SendStore
 func (n *Node) Store(data string) (string, error) {
 	return n.SendStore(data)
 }
@@ -247,4 +398,29 @@ func (n *Node) AddContact(contact Contact) {
 // Helper function to generate message IDs
 func generateMessageID() string {
 	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+
+// Response tracking methods for network-only operations
+func (n *Node) RegisterResponseChannel(messageID string, ch chan string) {
+	n.responseMutex.Lock()
+	defer n.responseMutex.Unlock()
+	n.pendingResponses[messageID] = ch
+}
+
+func (n *Node) SendResponse(messageID string, value string) {
+	n.responseMutex.Lock()
+	defer n.responseMutex.Unlock()
+	if ch, exists := n.pendingResponses[messageID]; exists {
+		select {
+		case ch <- value:
+		default:
+		}
+		delete(n.pendingResponses, messageID)
+	}
+}
+
+func (n *Node) CleanupResponseChannel(messageID string) {
+	n.responseMutex.Lock()
+	defer n.responseMutex.Unlock()
+	delete(n.pendingResponses, messageID)
 }

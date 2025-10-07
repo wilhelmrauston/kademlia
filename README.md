@@ -192,8 +192,7 @@ go test -v
 # Install GCC first: sudo apt install build-essential
 CGO_ENABLED=1 go test -v -race
 
-# Alternative: Run tests without race detection if GCC unavailable
-go test -v
+
 ```
 
 **Note for VS Code Users:** If VS Code test runner shows "setup failed" errors with module path `main/kademlia`, run tests from terminal instead. The issue is with module path resolution in the IDE.
