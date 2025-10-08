@@ -148,7 +148,7 @@ func startPeriodicMaintenance(node *kademlia.Node, bootstrapAddr string) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		fmt.Printf("DEBUG: Sending periodic ping to bootstrap\n")
+		//fmt.Printf("DEBUG: Sending periodic ping to bootstrap\n")
 		err := node.SendPing(bootstrapAddr)
 		if err != nil {
 			fmt.Printf("Periodic ping failed: %v\n", err)

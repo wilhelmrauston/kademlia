@@ -11,8 +11,8 @@ import (
 )
 
 type DataStore struct {
-    data map[string]string
-    mutex sync.RWMutex
+	data  map[string]string
+	mutex sync.RWMutex
 }
 
 type Node struct {
@@ -126,188 +126,188 @@ func generateMessageID() string {
 
 // IterativeFindNode performs the core Kademlia lookup algorithm
 func (n *Node) IterativeFindNode(targetID *KademliaID) []Contact {
-    alpha := n.config.Alpha // 3
-    k := n.config.K         // 20
-    
-    fmt.Printf("Starting iterative lookup for target %s\n", targetID.String()[:8])
-    
-    // Step 1: Initialize with k closest contacts from our routing table
-    candidates := n.routingTable.FindClosestContacts(targetID, k)
-    if len(candidates) == 0 {
-        fmt.Printf("No initial candidates found in routing table\n")
-        return []Contact{}
-    }
-    
-    // Calculate distances for all candidates
-    for i := range candidates {
-        candidates[i].CalcDistance(targetID)
-    }
-    
-    // Sort by distance to target
-    sort.Slice(candidates, func(i, j int) bool {
-        return candidates[i].distance.Less(candidates[j].distance)
-    })
-    
-    fmt.Printf("Starting with %d candidates from routing table\n", len(candidates))
-    
-    // Track which nodes we've queried
-    queried := make(map[string]bool)
-    
-    // Track the closest distance seen so far
-    var closestDistance *KademliaID
-    if len(candidates) > 0 {
-        closestDistance = candidates[0].distance
-    }
-    
-    for round := 1; round <= 10; round++ { // Max 10 rounds to prevent infinite loops
-        fmt.Printf("--- Lookup round %d ---\n", round)
-        
-        // Step 2: Select α closest unqueried nodes
-        var toQuery []Contact
-        for _, contact := range candidates {
-            contactKey := contact.ID.String()
-            if !queried[contactKey] && len(toQuery) < alpha {
-                toQuery = append(toQuery, contact)
-                queried[contactKey] = true
-            }
-        }
-        
-        if len(toQuery) == 0 {
-            fmt.Printf("No more unqueried nodes available\n")
-            break
-        }
-        
-        fmt.Printf("Querying %d nodes in parallel\n", len(toQuery))
-        
-        // Step 3: Query selected nodes in parallel
-        responseChan := make(chan []Contact, len(toQuery))
-        
-        for _, contact := range toQuery {
-            go func(c Contact) {
-                contacts, err := n.SendFindNodeAndWait(c.Address, targetID, 5*time.Second)
-                if err != nil {
-                    fmt.Printf("Query to %s failed: %v\n", c.Address, err)
-                    responseChan <- []Contact{}
-                } else {
-                    responseChan <- contacts
-                }
-            }(contact)
-        }
-        
-        // Collect all responses
-        var newContacts []Contact
-        for i := 0; i < len(toQuery); i++ {
-            select {
-            case contacts := <-responseChan:
-                newContacts = append(newContacts, contacts...)
-            case <-time.After(6 * time.Second):
-                fmt.Printf("Timeout waiting for response\n")
-            }
-        }
-        
-        fmt.Printf("Received %d new contacts from queries\n", len(newContacts))
-        
-        // Step 4: Add new contacts to candidate list
-        contactMap := make(map[string]Contact)
-        
-        // Add existing candidates
-        for _, contact := range candidates {
-            contactMap[contact.ID.String()] = contact
-        }
-        
-        // Add new contacts (avoiding duplicates)
-        for _, contact := range newContacts {
-            if _, exists := contactMap[contact.ID.String()]; !exists {
-                contact.CalcDistance(targetID)
-                contactMap[contact.ID.String()] = contact
-            }
-        }
-        
-        // Convert back to slice and sort by distance
-        candidates = make([]Contact, 0, len(contactMap))
-        for _, contact := range contactMap {
-            candidates = append(candidates, contact)
-        }
-        
-        sort.Slice(candidates, func(i, j int) bool {
-            return candidates[i].distance.Less(candidates[j].distance)
-        })
-        
-        // Keep only k closest candidates
-        if len(candidates) > k {
-            candidates = candidates[:k]
-        }
-        
-        // Step 5: Check termination condition
-        // Terminate if we haven't found any closer nodes
-        if len(candidates) > 0 && candidates[0].distance.Less(closestDistance) {
-            closestDistance = candidates[0].distance
-            fmt.Printf("Found closer node: distance %s\n", closestDistance.String()[:8])
-        } else {
-            fmt.Printf("No closer nodes found, terminating lookup\n")
-            break
-        }
-    }
-    
-    // Step 6: Ensure we've queried the k closest nodes we know about
-    // This is the paper's requirement: "query and get responses from the k closest nodes"
-    unqueriedClosest := 0
-    for i, contact := range candidates {
-        if i >= k {
-            break
-        }
-        if !queried[contact.ID.String()] {
-            unqueriedClosest++
-        }
-    }
-    
-    // If we have unqueried nodes among the k closest, query them
-    if unqueriedClosest > 0 {
-        fmt.Printf("Querying %d remaining closest nodes\n", unqueriedClosest)
-        
-        for i, contact := range candidates {
-            if i >= k {
-                break
-            }
-            contactKey := contact.ID.String()
-            if !queried[contactKey] {
-                queried[contactKey] = true
-                contacts, err := n.SendFindNodeAndWait(contact.Address, targetID, 5*time.Second)
-                if err == nil {
-                    // Add any new contacts discovered
-                    for _, newContact := range contacts {
-                        newContact.CalcDistance(targetID)
-                        // Only add if it would be in the k closest
-                        if len(candidates) < k || newContact.distance.Less(candidates[k-1].distance) {
-                            candidates = append(candidates, newContact)
-                            sort.Slice(candidates, func(i, j int) bool {
-                                return candidates[i].distance.Less(candidates[j].distance)
-                            })
-                            if len(candidates) > k {
-                                candidates = candidates[:k]
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    // Return the k closest contacts
-    result := candidates
-    if len(result) > k {
-        result = result[:k]
-    }
-    
-    fmt.Printf("Iterative lookup complete, returning %d contacts\n", len(result))
-    return result
+	alpha := n.config.Alpha // 3
+	k := n.config.K         // 20
+
+	fmt.Printf("Starting iterative lookup for target %s\n", targetID.String()[:8])
+
+	// Step 1: Initialize with k closest contacts from our routing table
+	candidates := n.routingTable.FindClosestContacts(targetID, k)
+	if len(candidates) == 0 {
+		fmt.Printf("No initial candidates found in routing table\n")
+		return []Contact{}
+	}
+
+	// Calculate distances for all candidates
+	for i := range candidates {
+		candidates[i].CalcDistance(targetID)
+	}
+
+	// Sort by distance to target
+	sort.Slice(candidates, func(i, j int) bool {
+		return candidates[i].distance.Less(candidates[j].distance)
+	})
+
+	fmt.Printf("Starting with %d candidates from routing table\n", len(candidates))
+
+	// Track which nodes we've queried
+	queried := make(map[string]bool)
+
+	// Track the closest distance seen so far
+	var closestDistance *KademliaID
+	if len(candidates) > 0 {
+		closestDistance = candidates[0].distance
+	}
+
+	for round := 1; round <= 10; round++ { // Max 10 rounds to prevent infinite loops
+		fmt.Printf("--- Lookup round %d ---\n", round)
+
+		// Step 2: Select α closest unqueried nodes
+		var toQuery []Contact
+		for _, contact := range candidates {
+			contactKey := contact.ID.String()
+			if !queried[contactKey] && len(toQuery) < alpha {
+				toQuery = append(toQuery, contact)
+				queried[contactKey] = true
+			}
+		}
+
+		if len(toQuery) == 0 {
+			fmt.Printf("No more unqueried nodes available\n")
+			break
+		}
+
+		fmt.Printf("Querying %d nodes in parallel\n", len(toQuery))
+
+		// Step 3: Query selected nodes in parallel
+		responseChan := make(chan []Contact, len(toQuery))
+
+		for _, contact := range toQuery {
+			go func(c Contact) {
+				contacts, err := n.SendFindNodeAndWait(c.Address, targetID, 5*time.Second)
+				if err != nil {
+					fmt.Printf("Query to %s failed: %v\n", c.Address, err)
+					responseChan <- []Contact{}
+				} else {
+					responseChan <- contacts
+				}
+			}(contact)
+		}
+
+		// Collect all responses
+		var newContacts []Contact
+		for i := 0; i < len(toQuery); i++ {
+			select {
+			case contacts := <-responseChan:
+				newContacts = append(newContacts, contacts...)
+			case <-time.After(6 * time.Second):
+				fmt.Printf("Timeout waiting for response\n")
+			}
+		}
+
+		fmt.Printf("Received %d new contacts from queries\n", len(newContacts))
+
+		// Step 4: Add new contacts to candidate list
+		contactMap := make(map[string]Contact)
+
+		// Add existing candidates
+		for _, contact := range candidates {
+			contactMap[contact.ID.String()] = contact
+		}
+
+		// Add new contacts (avoiding duplicates)
+		for _, contact := range newContacts {
+			if _, exists := contactMap[contact.ID.String()]; !exists {
+				contact.CalcDistance(targetID)
+				contactMap[contact.ID.String()] = contact
+			}
+		}
+
+		// Convert back to slice and sort by distance
+		candidates = make([]Contact, 0, len(contactMap))
+		for _, contact := range contactMap {
+			candidates = append(candidates, contact)
+		}
+
+		sort.Slice(candidates, func(i, j int) bool {
+			return candidates[i].distance.Less(candidates[j].distance)
+		})
+
+		// Keep only k closest candidates
+		if len(candidates) > k {
+			candidates = candidates[:k]
+		}
+
+		// Step 5: Check termination condition
+		// Terminate if we haven't found any closer nodes
+		if len(candidates) > 0 && candidates[0].distance.Less(closestDistance) {
+			closestDistance = candidates[0].distance
+			fmt.Printf("Found closer node: distance %s\n", closestDistance.String()[:8])
+		} else {
+			fmt.Printf("No closer nodes found, terminating lookup\n")
+			break
+		}
+	}
+
+	// Step 6: Ensure we've queried the k closest nodes we know about
+	// This is the paper's requirement: "query and get responses from the k closest nodes"
+	unqueriedClosest := 0
+	for i, contact := range candidates {
+		if i >= k {
+			break
+		}
+		if !queried[contact.ID.String()] {
+			unqueriedClosest++
+		}
+	}
+
+	// If we have unqueried nodes among the k closest, query them
+	if unqueriedClosest > 0 {
+		fmt.Printf("Querying %d remaining closest nodes\n", unqueriedClosest)
+
+		for i, contact := range candidates {
+			if i >= k {
+				break
+			}
+			contactKey := contact.ID.String()
+			if !queried[contactKey] {
+				queried[contactKey] = true
+				contacts, err := n.SendFindNodeAndWait(contact.Address, targetID, 5*time.Second)
+				if err == nil {
+					// Add any new contacts discovered
+					for _, newContact := range contacts {
+						newContact.CalcDistance(targetID)
+						// Only add if it would be in the k closest
+						if len(candidates) < k || newContact.distance.Less(candidates[k-1].distance) {
+							candidates = append(candidates, newContact)
+							sort.Slice(candidates, func(i, j int) bool {
+								return candidates[i].distance.Less(candidates[j].distance)
+							})
+							if len(candidates) > k {
+								candidates = candidates[:k]
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Return the k closest contacts
+	result := candidates
+	if len(result) > k {
+		result = result[:k]
+	}
+
+	fmt.Printf("Iterative lookup complete, returning %d contacts\n", len(result))
+	return result
 }
 
 // parallelQuery sends FIND_NODE requests to multiple nodes concurrently
 func (n *Node) parallelQuery(contacts []Contact, targetID *KademliaID) []Contact {
 	resultChan := make(chan []Contact, len(contacts))
 	timeout := 5 * time.Second
-	
+
 	// Send queries in parallel
 	for _, contact := range contacts {
 		go func(c Contact) {
@@ -315,7 +315,7 @@ func (n *Node) parallelQuery(contacts []Contact, targetID *KademliaID) []Contact
 			resultChan <- result
 		}(contact)
 	}
-	
+
 	// Collect results
 	var allNewContacts []Contact
 	for i := 0; i < len(contacts); i++ {
@@ -327,50 +327,50 @@ func (n *Node) parallelQuery(contacts []Contact, targetID *KademliaID) []Contact
 			fmt.Printf("Warning: Query result not received in time\n")
 		}
 	}
-	
+
 	return allNewContacts
 }
 
 // queryNodeWithTimeout sends a FIND_NODE to a single node with timeout
 func (n *Node) queryNodeWithTimeout(contact Contact, targetID *KademliaID, timeout time.Duration) []Contact {
-    fmt.Printf("Querying node %s for target %s\n", contact.ID.String()[:8], targetID.String()[:8])
-    
-    contacts, err := n.SendFindNodeAndWait(contact.Address, targetID, timeout)
-    if err != nil {
-        fmt.Printf("Failed to query node %s: %v\n", contact.Address, err)
-        return []Contact{}
-    }
-    
-    fmt.Printf("Successfully received %d contacts from %s\n", len(contacts), contact.Address)
-    return contacts
+	fmt.Printf("Querying node %s for target %s\n", contact.ID.String()[:8], targetID.String()[:8])
+
+	contacts, err := n.SendFindNodeAndWait(contact.Address, targetID, timeout)
+	if err != nil {
+		fmt.Printf("Failed to query node %s: %v\n", contact.Address, err)
+		return []Contact{}
+	}
+
+	fmt.Printf("Successfully received %d contacts from %s\n", len(contacts), contact.Address)
+	return contacts
 }
 
 // mergeAndSortContacts combines candidate lists and sorts by distance to target
 func (n *Node) mergeAndSortContacts(existing []Contact, new []Contact, targetID *KademliaID, maxCount int) []Contact {
 	// Create a map to avoid duplicates
 	contactMap := make(map[string]Contact)
-	
+
 	// Add existing contacts
 	for _, contact := range existing {
 		contactMap[contact.ID.String()] = contact
 	}
-	
+
 	// Add new contacts
 	for _, contact := range new {
 		contactMap[contact.ID.String()] = contact
 	}
-	
+
 	// Convert back to slice and calculate distances
 	var allContacts []Contact
 	for _, contact := range contactMap {
 		contact.CalcDistance(targetID)
 		allContacts = append(allContacts, contact)
 	}
-	
+
 	// Sort by distance to target
 	candidates := ContactCandidates{contacts: allContacts}
 	candidates.Sort()
-	
+
 	// Return up to maxCount contacts
 	result := candidates.GetContacts(min(maxCount, len(allContacts)))
 	return result
@@ -380,57 +380,57 @@ func (n *Node) mergeAndSortContacts(existing []Contact, new []Contact, targetID 
 func (n *Node) PerformSelfLookup() {
 	fmt.Printf("Performing iterative self-lookup to discover network\n")
 	contacts := n.IterativeFindNode(n.ID)
-	
+
 	// Add discovered contacts to routing table
 	for _, contact := range contacts {
 		n.routingTable.AddContact(contact)
 	}
-	
+
 	fmt.Printf("Self-lookup complete, discovered %d contacts\n", len(contacts))
 }
 
 func (n *Node) SendFindNodeAndWait(targetAddr string, targetID *KademliaID, timeout time.Duration) ([]Contact, error) {
-    myContact := NewContact(n.ID, n.Address)
-    
-    msg := Message{
-        Type:      FIND_NODE,
-        MessageID: generateMessageID(),
-        Sender:    myContact,
-        Timestamp: time.Now().Unix(),
-        Data: FindNodeData{
-            TargetID: targetID,
-        },
-    }
-    
-    // Cast transport to UDPTransport to access SendAndWaitForResponse
-    udpTransport, ok := n.transport.(*UDPTransport)
-    if !ok {
-        return nil, fmt.Errorf("transport is not UDPTransport")
-    }
-    
-    response, err := udpTransport.SendAndWaitForResponse(msg, targetAddr, timeout)
-    if err != nil {
-        return nil, fmt.Errorf("failed to get response: %v", err)
-    }
-    
-    if response.Type != FIND_NODE_RESPONSE {
-        return nil, fmt.Errorf("unexpected response type: %s", response.Type)
-    }
-    
-    // Extract contacts from response using JSON marshaling approach
-    dataBytes, err := json.Marshal(response.Data)
-    if err != nil {
-        return nil, fmt.Errorf("failed to marshal response data: %v", err)
-    }
-    
-    var responseData FindNodeResponse
-    err = json.Unmarshal(dataBytes, &responseData)
-    if err != nil {
-        return nil, fmt.Errorf("failed to unmarshal response data: %v", err)
-    }
-    
-    fmt.Printf("DEBUG: Received %d contacts in FIND_NODE response\n", len(responseData.Contacts))
-    return responseData.Contacts, nil
+	myContact := NewContact(n.ID, n.Address)
+
+	msg := Message{
+		Type:      FIND_NODE,
+		MessageID: generateMessageID(),
+		Sender:    myContact,
+		Timestamp: time.Now().Unix(),
+		Data: FindNodeData{
+			TargetID: targetID,
+		},
+	}
+
+	// Cast transport to UDPTransport to access SendAndWaitForResponse
+	udpTransport, ok := n.transport.(*UDPTransport)
+	if !ok {
+		return nil, fmt.Errorf("transport is not UDPTransport")
+	}
+
+	response, err := udpTransport.SendAndWaitForResponse(msg, targetAddr, timeout)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get response: %v", err)
+	}
+
+	if response.Type != FIND_NODE_RESPONSE {
+		return nil, fmt.Errorf("unexpected response type: %s", response.Type)
+	}
+
+	// Extract contacts from response using JSON marshaling approach
+	dataBytes, err := json.Marshal(response.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response data: %v", err)
+	}
+
+	var responseData FindNodeResponse
+	err = json.Unmarshal(dataBytes, &responseData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response data: %v", err)
+	}
+
+	//fmt.Printf("DEBUG: Received %d contacts in FIND_NODE response\n", len(responseData.Contacts))
+	return responseData.Contacts, nil
 }
 
 func NewDataStore() *DataStore {
@@ -444,7 +444,7 @@ func (ds *DataStore) Store(key, value string) {
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 	ds.data[key] = value
-	fmt.Printf("DEBUG: Stored key %s with value (length: %d)\n", key, len(value))
+	//fmt.Printf("DEBUG: Stored key %s with value (length: %d)\n", key, len(value))
 }
 
 // Get retrieves a value by key
@@ -459,7 +459,7 @@ func (ds *DataStore) Get(key string) (string, bool) {
 func (ds *DataStore) GetAllKeys() []string {
 	ds.mutex.RLock()
 	defer ds.mutex.RUnlock()
-	
+
 	keys := make([]string, 0, len(ds.data))
 	for key := range ds.data {
 		keys = append(keys, key)
@@ -473,7 +473,7 @@ func HashKey(key string) *KademliaID {
 	hasher := sha1.New()
 	hasher.Write([]byte(key))
 	hash := hasher.Sum(nil)
-	
+
 	// Convert to hex string and create KademliaID
 	hexStr := hex.EncodeToString(hash)
 	return NewKademliaID(hexStr)
@@ -485,42 +485,42 @@ func HashKey(key string) *KademliaID {
 func (n *Node) StoreValue(key, value string) error {
 	fmt.Printf("Storing key-value pair: key=%s, value_length=%d\n", key, len(value))
 	// We treat the VALUE’s hash as the object key
-    hashID := HashKey(value)
-    hashHex := hashID.String()
-    fmt.Printf("Storing object. hash=%s value_length=%d\n", hashHex, len(value))
+	hashID := HashKey(value)
+	hashHex := hashID.String()
+	fmt.Printf("Storing object. hash=%s value_length=%d\n", hashHex, len(value))
 
-    // Route towards the hash of the VALUE
-    targetID := hashID
-	
+	// Route towards the hash of the VALUE
+	targetID := hashID
+
 	// Find k closest nodes to the target
 	closestNodes := n.IterativeFindNode(targetID)
 	if len(closestNodes) == 0 {
 		fmt.Printf("No nodes found to store the value\n")
 		return fmt.Errorf("no nodes available for storage")
 	}
-	
+
 	fmt.Printf("Found %d nodes for storage\n", len(closestNodes))
-	
+
 	// Store on ourselves if we're among the closest
 	myDistance := n.ID.CalcDistance(targetID)
 	shouldStoreLocally := true
-	
+
 	for _, contact := range closestNodes {
 		if contact.distance.Less(myDistance) {
 			shouldStoreLocally = false
 			break
 		}
 	}
-	
+
 	successCount := 0
-	
+
 	// Store locally if we're close enough
 	if shouldStoreLocally {
 		n.dataStore.Store(hashHex, value)
 		successCount++
 		fmt.Printf("Stored locally on node %s\n", n.ID.String()[:8])
 	}
-	
+
 	// Send STORE RPCs to closest nodes (up to k nodes)
 	maxNodes := min(len(closestNodes), n.config.K)
 	for i := 0; i < maxNodes; i++ {
@@ -529,8 +529,8 @@ func (n *Node) StoreValue(key, value string) error {
 		if contact.ID.Equals(n.ID) {
 			continue
 		}
-		
-	 	err := n.SendStore(contact.Address, hashHex, value)
+
+		err := n.SendStore(contact.Address, hashHex, value)
 		if err != nil {
 			fmt.Printf("Failed to store at %s: %v\n", contact.Address, err)
 		} else {
@@ -538,125 +538,124 @@ func (n *Node) StoreValue(key, value string) error {
 			fmt.Printf("Successfully stored at node %s\n", contact.ID.String()[:8])
 		}
 	}
-	
+
 	fmt.Printf("Storage complete: %d successful stores\n", successCount)
-	
+
 	if successCount == 0 {
 		return fmt.Errorf("failed to store value at any node")
 	}
-	
+
 	return nil
 }
 
 // FindValue performs an iterative search for a value
 func (n *Node) FindValue(key string) (string, error) {
 	fmt.Printf("Finding value for key: %s\n", key)
-	
+
 	// Hash the key to get target ID
 	targetID := HashKey(key)
 	fmt.Printf("Target ID for key '%s': %s\n", key, targetID.String())
-	
+
 	// Check if we have it locally first
 	if value, exists := n.dataStore.Get(key); exists {
 		fmt.Printf("Found value locally\n")
 		return value, nil
 	}
-	
+
 	// Perform iterative lookup using FIND_VALUE
 	return n.IterativeFindValue(targetID, key)
 }
 
 // FindByHash looks up a value by its hex hash and returns (value, fromContact).
 func (n *Node) FindByHash(hashHex string) (string, Contact, error) {
-    // 1) Local check by hash as stored in our DataStore
-    if v, ok := n.dataStore.Get(hashHex); ok {
-        return v, NewContact(n.ID, n.Address), nil
-    }
+	// 1) Local check by hash as stored in our DataStore
+	if v, ok := n.dataStore.Get(hashHex); ok {
+		return v, NewContact(n.ID, n.Address), nil
+	}
 
-    // 2) Parse hex -> KademliaID, then do iterative FIND_VALUE using the same hash string in RPCs
-    targetID := NewKademliaID(hashHex)
-    return n.iterativeFindValueByHash(targetID, hashHex)
+	// 2) Parse hex -> KademliaID, then do iterative FIND_VALUE using the same hash string in RPCs
+	targetID := NewKademliaID(hashHex)
+	return n.iterativeFindValueByHash(targetID, hashHex)
 }
 
 // iterativeFindValueByHash performs the FIND_VALUE walk where the "key" we send over the wire
 // is the already-hex-encoded hash. We return (value, fromContact) on first success.
 func (n *Node) iterativeFindValueByHash(targetID *KademliaID, hashHex string) (string, Contact, error) {
-    alpha := n.config.Alpha
-    k := n.config.K
+	alpha := n.config.Alpha
+	k := n.config.K
 
-    // Seed from routing table
-    candidates := n.routingTable.FindClosestContacts(targetID, k)
-    if len(candidates) == 0 {
-        return "", Contact{}, fmt.Errorf("no nodes available for lookup")
-    }
+	// Seed from routing table
+	candidates := n.routingTable.FindClosestContacts(targetID, k)
+	if len(candidates) == 0 {
+		return "", Contact{}, fmt.Errorf("no nodes available for lookup")
+	}
 
-    queried := make(map[string]bool)
-    bestChanged := true
+	queried := make(map[string]bool)
+	bestChanged := true
 
-    for round := 0; round < 10 && bestChanged; round++ {
-        // pick next α unqueried
-        toQuery := make([]Contact, 0, alpha)
-        for _, c := range candidates {
-            if !queried[c.Address] && len(toQuery) < alpha {
-                toQuery = append(toQuery, c)
-            }
-        }
-        if len(toQuery) == 0 {
-            break
-        }
+	for round := 0; round < 10 && bestChanged; round++ {
+		// pick next α unqueried
+		toQuery := make([]Contact, 0, alpha)
+		for _, c := range candidates {
+			if !queried[c.Address] && len(toQuery) < alpha {
+				toQuery = append(toQuery, c)
+			}
+		}
+		if len(toQuery) == 0 {
+			break
+		}
 
-        bestChanged = false
+		bestChanged = false
 		timeout := 5 * time.Second
 
-        for _, contact := range toQuery {
-            queried[contact.Address] = true
+		for _, contact := range toQuery {
+			queried[contact.Address] = true
 
-            // Send FIND_VALUE(hashHex)
+			// Send FIND_VALUE(hashHex)
 			res := n.queryNodeForValue(contact, hashHex, timeout)
 			if !res.Found && len(res.Contacts) == 0 {
 				continue
 			}
 
-            if res.Found {
-                // SUCCESS: value came from `contact`
-                return res.Value, contact, nil
-            }
+			if res.Found {
+				// SUCCESS: value came from `contact`
+				return res.Value, contact, nil
+			}
 
-            // Merge returned contacts and re-sort by distance
-            for i := range res.Contacts {
-                res.Contacts[i].CalcDistance(targetID)
-            }
-            merged := append(candidates, res.Contacts...)
-            sort.Slice(merged, func(i, j int) bool {
-                return merged[i].distance.Less(merged[j].distance)
-            })
-            // keep top k unique
-            uniq := make([]Contact, 0, k)
-            seen := map[string]bool{}
-            for _, c := range merged {
-                if !seen[c.Address] {
-                    uniq = append(uniq, c)
-                    seen[c.Address] = true
-                    if len(uniq) == k {
-                        break
-                    }
-                }
-            }
-            if len(uniq) > 0 && (len(candidates) == 0 || !uniq[0].distance.Equals(candidates[0].distance)) {
-                bestChanged = true
-            }
-            candidates = uniq
-        }
-    }
+			// Merge returned contacts and re-sort by distance
+			for i := range res.Contacts {
+				res.Contacts[i].CalcDistance(targetID)
+			}
+			merged := append(candidates, res.Contacts...)
+			sort.Slice(merged, func(i, j int) bool {
+				return merged[i].distance.Less(merged[j].distance)
+			})
+			// keep top k unique
+			uniq := make([]Contact, 0, k)
+			seen := map[string]bool{}
+			for _, c := range merged {
+				if !seen[c.Address] {
+					uniq = append(uniq, c)
+					seen[c.Address] = true
+					if len(uniq) == k {
+						break
+					}
+				}
+			}
+			if len(uniq) > 0 && (len(candidates) == 0 || !uniq[0].distance.Equals(candidates[0].distance)) {
+				bestChanged = true
+			}
+			candidates = uniq
+		}
+	}
 
-    return "", Contact{}, fmt.Errorf("value not found")
+	return "", Contact{}, fmt.Errorf("value not found")
 }
-
 
 // SendStore sends a STORE RPC to a target address
 func (n *Node) SendStore(targetAddr, key, value string) error {
 	myContact := NewContact(n.ID, n.Address)
-	
+
 	msg := Message{
 		Type:      STORE,
 		MessageID: generateMessageID(),
@@ -667,30 +666,30 @@ func (n *Node) SendStore(targetAddr, key, value string) error {
 			Value: value,
 		},
 	}
-	
+
 	// Cast transport to UDPTransport to access SendAndWaitForResponse
 	udpTransport, ok := n.transport.(*UDPTransport)
 	if !ok {
 		return fmt.Errorf("transport is not UDPTransport")
 	}
-	
+
 	response, err := udpTransport.SendAndWaitForResponse(msg, targetAddr, 5*time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to get STORE response: %v", err)
 	}
-	
+
 	if response.Type != STORE_RESPONSE {
 		return fmt.Errorf("unexpected response type: %s", response.Type)
 	}
-	
-	fmt.Printf("DEBUG: Received STORE response from %s\n", targetAddr)
+
+	//fmt.Printf("DEBUG: Received STORE response from %s\n", targetAddr)
 	return nil
 }
 
 // SendFindValue sends a FIND_VALUE RPC to a target address
 func (n *Node) SendFindValue(targetAddr, key string) (*FindValueResponse, error) {
 	myContact := NewContact(n.ID, n.Address)
-	
+
 	msg := Message{
 		Type:      FIND_VALUE,
 		MessageID: generateMessageID(),
@@ -700,28 +699,28 @@ func (n *Node) SendFindValue(targetAddr, key string) (*FindValueResponse, error)
 			Key: key,
 		},
 	}
-	
+
 	// Cast transport to UDPTransport to access SendAndWaitForResponse
 	udpTransport, ok := n.transport.(*UDPTransport)
 	if !ok {
 		return nil, fmt.Errorf("transport is not UDPTransport")
 	}
-	
+
 	response, err := udpTransport.SendAndWaitForResponse(msg, targetAddr, 5*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get FIND_VALUE response: %v", err)
 	}
-	
+
 	if response.Type != FIND_VALUE_RESPONSE {
 		return nil, fmt.Errorf("unexpected response type: %s", response.Type)
 	}
-	
+
 	// Parse response data
 	responseData, err := parseFindValueResponse(response.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse FIND_VALUE response: %v", err)
 	}
-	
+
 	return responseData, nil
 }
 
@@ -729,27 +728,27 @@ func (n *Node) SendFindValue(targetAddr, key string) (*FindValueResponse, error)
 func (n *Node) IterativeFindValue(targetID *KademliaID, key string) (string, error) {
 	alpha := n.config.Alpha
 	k := n.config.K
-	
+
 	fmt.Printf("Starting iterative FIND_VALUE for key %s (target: %s)\n", key, targetID.String()[:8])
-	
+
 	// Start with closest known contacts from our routing table
 	candidates := n.routingTable.FindClosestContacts(targetID, k)
 	if len(candidates) == 0 {
 		fmt.Printf("No initial candidates found in routing table\n")
 		return "", fmt.Errorf("no nodes available for lookup")
 	}
-	
+
 	fmt.Printf("Starting with %d candidates from routing table\n", len(candidates))
-	
+
 	// Track which nodes we've already queried
 	queried := make(map[string]bool)
 	var queriedMutex sync.Mutex
-	
+
 	round := 0
 	for {
 		round++
 		fmt.Printf("--- FIND_VALUE round %d ---\n", round)
-		
+
 		// Select up to alpha unqueried nodes that are closest to target
 		var toQuery []Contact
 		queriedMutex.Lock()
@@ -761,50 +760,50 @@ func (n *Node) IterativeFindValue(targetID *KademliaID, key string) (string, err
 			}
 		}
 		queriedMutex.Unlock()
-		
+
 		if len(toQuery) == 0 {
 			fmt.Printf("No more nodes to query, value not found\n")
 			break
 		}
-		
+
 		fmt.Printf("Querying %d nodes in parallel for value\n", len(toQuery))
-		
+
 		// Query nodes in parallel for the value
 		value, found, newContacts := n.parallelFindValue(toQuery, key)
-		
+
 		if found {
 			fmt.Printf("Value found! Returning result\n")
 			return value, nil
 		}
-		
+
 		fmt.Printf("Value not found, received %d new contacts\n", len(newContacts))
-		
+
 		// Merge new contacts with existing candidates
 		candidates = n.mergeAndSortContacts(candidates, newContacts, targetID, k)
-		
+
 		// Prevent infinite loops
 		if round > 10 {
 			fmt.Printf("Max rounds reached, value not found\n")
 			break
 		}
 	}
-	
+
 	return "", fmt.Errorf("value not found for key: %s", key)
 }
 
 // FindValueResult represents the result of a FIND_VALUE query
 type FindValueResult struct {
-    Found    bool
-    Value    string
-    Contacts []Contact
+	Found    bool
+	Value    string
+	Contacts []Contact
 }
 
 // parallelFindValue sends FIND_VALUE requests to multiple nodes concurrently
 func (n *Node) parallelFindValue(contacts []Contact, key string) (string, bool, []Contact) {
-	
+
 	resultChan := make(chan FindValueResult, len(contacts))
 	timeout := 5 * time.Second
-	
+
 	// Send queries in parallel
 	for _, contact := range contacts {
 		go func(c Contact) {
@@ -812,7 +811,7 @@ func (n *Node) parallelFindValue(contacts []Contact, key string) (string, bool, 
 			resultChan <- result
 		}(contact)
 	}
-	
+
 	// Collect results
 	var allNewContacts []Contact
 	for i := 0; i < len(contacts); i++ {
@@ -827,20 +826,20 @@ func (n *Node) parallelFindValue(contacts []Contact, key string) (string, bool, 
 			fmt.Printf("Warning: FIND_VALUE result not received in time\n")
 		}
 	}
-	
+
 	return "", false, allNewContacts
 }
 
 // queryNodeForValue sends a FIND_VALUE to a single node with timeout
 func (n *Node) queryNodeForValue(contact Contact, key string, timeout time.Duration) FindValueResult {
 	fmt.Printf("Querying node %s for value (key: %s)\n", contact.ID.String()[:8], key)
-	
+
 	response, err := n.SendFindValue(contact.Address, key)
 	if err != nil {
 		fmt.Printf("Failed to query node %s for value: %v\n", contact.Address, err)
 		return FindValueResult{Found: false}
 	}
-	
+
 	if response.Found {
 		fmt.Printf("SUCCESS: Found value at node %s\n", contact.Address)
 		return FindValueResult{
@@ -848,7 +847,7 @@ func (n *Node) queryNodeForValue(contact Contact, key string, timeout time.Durat
 			Found: true,
 		}
 	}
-	
+
 	fmt.Printf("Value not found at %s, received %d contacts\n", contact.Address, len(response.Contacts))
 	return FindValueResult{
 		Found:    false,
@@ -862,13 +861,13 @@ func parseFindValueResponse(data interface{}) (*FindValueResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal response data: %v", err)
 	}
-	
+
 	var responseData FindValueResponse
 	err = json.Unmarshal(dataBytes, &responseData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response data: %v", err)
 	}
-	
+
 	return &responseData, nil
 }
 
@@ -881,9 +880,9 @@ func min(a, b int) int {
 }
 
 func (n *Node) GetRoutingTable() RoutingTableManager {
-    return n.routingTable
+	return n.routingTable
 }
 
 func (n *Node) GetDataStore() *DataStore {
-    return n.dataStore
+	return n.dataStore
 }
